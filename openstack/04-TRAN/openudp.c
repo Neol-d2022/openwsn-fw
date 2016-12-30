@@ -52,6 +52,9 @@ void openudp_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
 	 //udpprint_sendDone(msg, error);
          rrt_sendDone(msg, error);
          break;
+      case WKP_UDP_TYPHOON:
+         utyphoon_sendDone(msg, error);
+         break;
       default:
          openserial_printError(COMPONENT_OPENUDP,ERR_UNSUPPORTED_PORT_NUMBER,
                                (errorparameter_t)msg->l4_sourcePortORicmpv6Type,
@@ -120,6 +123,9 @@ void openudp_receive(OpenQueueEntry_t* msg) {
          break;
       case WKP_UDP_INJECT:
          uinject_receive(msg);
+         break;
+      case WKP_UDP_TYPHOON:
+         utyphoon_receive(msg);
          break;
       default:
          openserial_printError(COMPONENT_OPENUDP,ERR_UNSUPPORTED_PORT_NUMBER,

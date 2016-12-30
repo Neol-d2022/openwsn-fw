@@ -19,6 +19,7 @@
 // UDP
 #include "uecho.h"
 #include "uinject.h"
+#include "utyphoon.h"
 
 //=========================== variables =======================================
 
@@ -41,4 +42,5 @@ void openapps_init(void) {
    techo_init();
    // UDP
 //   uecho_init();
+   utyphoon_init();
 }
