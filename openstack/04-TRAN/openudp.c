@@ -10,6 +10,9 @@
 #include "uinject.h"
 #include "userialbridge.h"
 #include "rrt.h"
+#include "utyphoon.h"
+#include "ublizzard.h"
+#include "uhurricane.h"
 
 //=========================== variables =======================================
 
@@ -143,6 +146,12 @@ void openudp_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
       case WKP_UDP_TYPHOON:
          utyphoon_sendDone(msg, error);
          break;
+      case WKP_UDP_BLIZZARD:
+         ublizzard_sendDone(msg, error);
+         break;
+      case WKP_UDP_HURRICANE:
+         uhurricane_sendDone(msg, error);
+         break;
       default:
          openserial_printError(COMPONENT_OPENUDP,ERR_UNSUPPORTED_PORT_NUMBER,
                                (errorparameter_t)msg->l4_sourcePortORicmpv6Type,
@@ -214,6 +223,12 @@ void openudp_receive(OpenQueueEntry_t* msg) {
          break;
       case WKP_UDP_TYPHOON:
          utyphoon_receive(msg);
+         break;
+      case WKP_UDP_BLIZZARD:
+         ublizzard_receive(msg);
+         break;
+      case WKP_UDP_HURRICANE:
+         uhurricane_receive(msg);
          break;
       default:
          openserial_printError(COMPONENT_OPENUDP,ERR_UNSUPPORTED_PORT_NUMBER,

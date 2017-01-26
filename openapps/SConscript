@@ -18,6 +18,8 @@ defaultApps   = [
     'userialbridge',
     'rrt',
     'utyphoon',
+    'ublizzard',
+    'uhurricane',
 ]
 if localEnv['board']=='python':
     defaultApps  += [
@@ -36,6 +38,8 @@ defaultAppsInit   = [
     'rrt',
     'uinject',
     'utyphoon',
+    'ublizzard',
+    'uhurricane',
 ]
 
 # additional apps the user wants to build
