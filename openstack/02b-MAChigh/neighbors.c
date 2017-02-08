@@ -81,18 +81,54 @@ conditions:
 open_addr_t* neighbors_getKANeighbor(uint16_t kaPeriod) {
    uint8_t         i;
    uint16_t        timeSinceHeard;
-   
-   // policy is not to KA to non-preferred parents so go strait to check if Preferred Parent is aging
-   if (icmpv6rpl_getPreferredParentIndex(&i)) {      // we have a Parent
-      if (neighbors_vars.neighbors[i].used==1) {     // that resolves to a neighbor in use (should always)
+   open_addr_t*    addrPreferred;
+   open_addr_t*    addrOther;
+
+   // initialize
+   addrPreferred = NULL;
+   addrOther     = NULL;
+
+   // Dual Path By YYS
+   // scan through the neighbor table, and populate addrPreferred and addrOther
+   for (i=0;i<MAXNUMNEIGHBORS;i++) {
+      if (neighbors_vars.neighbors[i].used==1) {
          timeSinceHeard = ieee154e_asnDiff(&neighbors_vars.neighbors[i].asn);
          if (timeSinceHeard>kaPeriod) {
             // this neighbor needs to be KA'ed to
-            return &(neighbors_vars.neighbors[i].addr_64b);
+            if (neighbors_vars.neighbors[i].parentPreference==MAXPREFERENCE) {
+               // its a preferred parent
+               addrPreferred = &(neighbors_vars.neighbors[i].addr_64b);
+            } else {
+               // its not a preferred parent
+               // Note: commented out since policy is not to KA to non-preferred parents
+               // addrOther =     &(neighbors_vars.neighbors[i].addr_64b);
+            }
          }
       }
    }
-   return NULL;
+
+   // OLD CODE START
+   // ===============================================================================================
+   // policy is not to KA to non-preferred parents so go strait to check if Preferred Parent is aging
+   //if (icmpv6rpl_getPreferredParentIndex(&i)) {      // we have a Parent
+   //   if (neighbors_vars.neighbors[i].used==1) {     // that resolves to a neighbor in use (should always)
+   //      timeSinceHeard = ieee154e_asnDiff(&neighbors_vars.neighbors[i].asn);
+   //      if (timeSinceHeard>kaPeriod) {
+   //         // this neighbor needs to be KA'ed to
+   //         return &(neighbors_vars.neighbors[i].addr_64b);
+   //      }
+   //   }
+   //}
+   //return NULL;
+   // OLD CODE END
+
+   if (addrPreferred!=NULL) {
+      return addrPreferred;
+   } else if (addrOther!=NULL) {
+      return addrOther;
+   } else {
+      return NULL;
+   }
 }
 
 bool neighbors_getNeighborNoResource(uint8_t index){
