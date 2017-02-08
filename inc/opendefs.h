@@ -93,6 +93,8 @@ enum {
    WKP_UDP_RINGMASTER                  =   15000,
    WKP_UDP_SERIALBRIDGE                =    2001,
    WKP_UDP_TYPHOON                     =   15001,
+   WKP_UDP_BLIZZARD                    =   15002,
+   WKP_UDP_HURRICANE                   =   15003,
 };
 
 //status elements
@@ -168,7 +170,9 @@ enum {
    COMPONENT_RRT                       = 0x25,
    COMPONENT_SECURITY                  = 0x26,
    COMPONENT_USERIALBRIDGE             = 0x27,
-   COMPONENT_UTYPHOON                  = 0X28,
+   COMPONENT_UTYPHOON                  = 0x28,
+   COMPONENT_UBLIZZARD                 = 0x29,
+   COMPONENT_UHURRICANE                = 0x2a,
 };
 
 /**

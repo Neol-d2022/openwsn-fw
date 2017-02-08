@@ -20,6 +20,8 @@
 #include "uecho.h"
 #include "uinject.h"
 #include "utyphoon.h"
+#include "ublizzard.h"
+#include "uhurricane.h"
 
 //=========================== variables =======================================
 
@@ -43,4 +45,6 @@ void openapps_init(void) {
    // UDP
 //   uecho_init();
    utyphoon_init();
+   ublizzard_init();
+   uhurricane_init();
 }

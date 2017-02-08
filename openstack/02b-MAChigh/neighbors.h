@@ -48,7 +48,16 @@ typedef struct {
    neighborRow_t        neighbors[MAXNUMNEIGHBORS];
    dagrank_t            myDAGrank;
    uint8_t              debugRow;
+   uint32_t             numTxTotal;
+   uint32_t             numTxAckTotal;
 } neighbors_vars_t;
+
+typedef struct {
+   bool               usedPrimary;
+   uint8_t            addrPrimary[8];
+   bool               usedBackup;
+   uint8_t            addrBackup[8];
+} addrParents_vars_t;
 
 //=========================== prototypes ======================================
 
@@ -92,6 +101,11 @@ bool          neighbors_getNeighborEui64(open_addr_t* address,uint8_t addr_type,
 void          neighbors_removeOld(void);
 // debug
 bool          debugPrint_neighbors(void);
+
+// ublizzard
+void          neighbors_get3parents(uint8_t* ptr);
+void          neighbors_set2parents(uint8_t* ptr, uint8_t num);
+void          neighbors_get_retrial_statistics(uint32_t* num1, uint32_t* num2);
 
 /**
 \}

@@ -9,6 +9,7 @@
 //=========================== variables =======================================
 
 static neighbors_vars_t neighbors_vars;
+addrParents_vars_t addrParents_vars;
 
 //=========================== prototypes ======================================
 
@@ -315,9 +316,16 @@ void neighbors_indicateTx(open_addr_t* l2_dest,
          // update statistics
         neighbors_vars.neighbors[i].numTx += numTxAttempts; 
         
+        if (neighbors_vars.numTxTotal>(0xffffffff-numTxAttempts)) {
+           neighbors_vars.numTxTotal/=2;
+           neighbors_vars.numTxAckTotal/=2;
+        }
+        neighbors_vars.numTxTotal += numTxAttempts;
+        
         if (was_finally_acked==TRUE) {
             neighbors_vars.neighbors[i].numTxACK++;
             memcpy(&neighbors_vars.neighbors[i].asn,asnTs,sizeof(asn_t));
+            neighbors_vars.numTxAckTotal++;
         }
         // #TODO : investigate this TX wrap thing! @incorrect in the meantime
         // DB (Nov 2015) I believe this is correct. The ratio numTx/numTxAck is still a correct approximation
@@ -329,6 +337,8 @@ void neighbors_indicateTx(open_addr_t* l2_dest,
         break;
       }
    }
+   
+   
 }
 
 //===== write addresses
@@ -613,4 +623,55 @@ bool isThisRowMatching(open_addr_t* address, uint8_t rowNumber) {
                                (errorparameter_t)3);
          return FALSE;
    }
+}
+
+
+// uhurricane
+
+void neighbors_get3parents(uint8_t* ptr){
+	uint8_t   i;
+	uint8_t   numNeighbors;
+
+	numNeighbors = 0;
+	for (i=0; i<MAXNUMNEIGHBORS; i++) {
+		if (neighbors_vars.neighbors[i].used==TRUE){
+	        memcpy( ptr,&(neighbors_vars.neighbors[i].addr_64b.addr_64b),LENGTH_ADDR64b);
+	        ptr += LENGTH_ADDR64b;
+	        memcpy( ptr,&(neighbors_vars.neighbors[i].DAGrank),sizeof(dagrank_t));
+	        ptr += sizeof(dagrank_t);
+	        memcpy( ptr,&(neighbors_vars.neighbors[i].numTx),sizeof(uint8_t));
+	        ptr += sizeof(uint8_t);
+	        memcpy( ptr,&(neighbors_vars.neighbors[i].numTxACK),sizeof(uint8_t));
+	        ptr += sizeof(uint8_t);
+
+	        numNeighbors++;
+	        if(numNeighbors>3)
+	        	break;
+		}
+	}
+}
+
+void neighbors_set2parents(uint8_t* ptr, uint8_t num){
+	if(num==2){
+		memcpy(&addrParents_vars.addrPrimary, ptr, LENGTH_ADDR64b);
+		memcpy(&addrParents_vars.addrBackup, ptr+8, LENGTH_ADDR64b);
+		addrParents_vars.usedPrimary = TRUE;
+		addrParents_vars.usedBackup  = TRUE;
+	}
+	else if(num==1){
+		memset(&addrParents_vars,0,sizeof(addrParents_vars));
+		memcpy(&addrParents_vars.addrPrimary, ptr, LENGTH_ADDR64b);
+		addrParents_vars.usedPrimary = TRUE;
+		addrParents_vars.usedBackup  = FALSE;
+	}
+	else{
+		memset(&addrParents_vars,0,sizeof(addrParents_vars));
+		addrParents_vars.usedPrimary = FALSE;
+		addrParents_vars.usedBackup  = FALSE;
+	}
+}
+
+void neighbors_get_retrial_statistics(uint32_t* num1, uint32_t* num2) {
+	memcpy(num1,&neighbors_vars.numTxTotal,4);
+	memcpy(num2,&neighbors_vars.numTxAckTotal,4);
 }
