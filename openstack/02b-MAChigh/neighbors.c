@@ -38,6 +38,10 @@ void neighbors_init() {
    memset(&neighbors_vars,0,sizeof(neighbors_vars_t));
    // The .used fields get reset to FALSE by this memset.
    
+   //EDIT(HCC): Initialization for Dual Path, uhurricane
+   memset(&addrParents_vars,0,sizeof(addrParents_vars_t));
+   addrParents_vars.indexPrimary = MAXNUMNEIGHBORS;
+   addrParents_vars.indexBackup  = MAXNUMNEIGHBORS;
 }
 
 //===== getters
@@ -95,7 +99,7 @@ open_addr_t* neighbors_getKANeighbor(uint16_t kaPeriod) {
          timeSinceHeard = ieee154e_asnDiff(&neighbors_vars.neighbors[i].asn);
          if (timeSinceHeard>kaPeriod) {
             // this neighbor needs to be KA'ed to
-            if (neighbors_vars.neighbors[i].parentPreference==MAXPREFERENCE) {
+            if (neighbors_vars.neighbors[i].parentPreference!=0) {
                // its a preferred parent
                addrPreferred = &(neighbors_vars.neighbors[i].addr_64b);
             } else {
@@ -531,16 +535,21 @@ void  neighbors_removeOld() {
             if (
                 i!= neighborIndexWithLowestRank[0] &&
                 i!= neighborIndexWithLowestRank[1] &&
-                i!= neighborIndexWithLowestRank[2]
+                i!= neighborIndexWithLowestRank[2] &&
+                i!= addrParents_vars.indexPrimary &&
+                i!= addrParents_vars.indexBackup
+                //EDIT(HCC): Should not remove gateway designated next hop neighbor from table.
             ) {
                 haveParent = icmpv6rpl_getPreferredParentIndex(&j);
                 if (haveParent && (i==j)) { // this is our preferred parent, carefull!
                     icmpv6rpl_killPreferredParent();
                     icmpv6rpl_updateMyDAGrankAndParentSelection();
                 }
-                if (neighbors_vars.neighbors[i].f6PNORES == FALSE){
-                    removeNeighbor(i);
-                }
+                //EDIT(HCC): f6PNORES tells that the neighbor has no room for ADDING more cells.
+                //           It should be able to delete cells even if this flag has set.
+                //if (neighbors_vars.neighbors[i].f6PNORES == FALSE){
+                removeNeighbor(i);
+                //}
             }
         }
     }
@@ -602,6 +611,18 @@ void registerNewNeighbor(open_addr_t* address,
             //update jp
             if (joinPrioPresent==TRUE){
                neighbors_vars.neighbors[i].joinPrio=joinPrio;
+            }
+
+            //EDIT(HCC): for uhurricane
+            if(addrParents_vars.usedPrimary == TRUE){
+                if(packetfunctions_sameAddress(&(addrParents_vars.addrPrimary),&neighbors_vars.neighbors[i].addr_64b)) {
+                    addrParents_vars.indexPrimary = i;
+                }
+            }
+            if(addrParents_vars.usedBackup == TRUE){
+                if(packetfunctions_sameAddress(&(addrParents_vars.addrBackup),&neighbors_vars.neighbors[i].addr_64b)) {
+                    addrParents_vars.indexBackup = i;
+                }
             }
             
             break;
@@ -688,26 +709,133 @@ void neighbors_get3parents(uint8_t* ptr){
 }
 
 void neighbors_set2parents(uint8_t* ptr, uint8_t num){
+    uint8_t i;
+
+    addrParents_vars.indexPrimary = MAXNUMNEIGHBORS;
+    addrParents_vars.indexBackup  = MAXNUMNEIGHBORS;
 	if(num==2){
-		memcpy(&addrParents_vars.addrPrimary, ptr, LENGTH_ADDR64b);
-		memcpy(&addrParents_vars.addrBackup, ptr+8, LENGTH_ADDR64b);
-		addrParents_vars.usedPrimary = TRUE;
+		memcpy(&addrParents_vars.addrPrimary, ptr  , LENGTH_ADDR64b);
+		memcpy(&addrParents_vars.addrBackup , ptr+8, LENGTH_ADDR64b);
+        addrParents_vars.usedPrimary = TRUE;
 		addrParents_vars.usedBackup  = TRUE;
+
 	}
 	else if(num==1){
-		memset(&addrParents_vars,0,sizeof(addrParents_vars));
 		memcpy(&addrParents_vars.addrPrimary, ptr, LENGTH_ADDR64b);
-		addrParents_vars.usedPrimary = TRUE;
+        memset(&addrParents_vars.addrBackup , 0, LENGTH_ADDR64b);
+        addrParents_vars.usedPrimary = TRUE;
 		addrParents_vars.usedBackup  = FALSE;
 	}
 	else{
-		memset(&addrParents_vars,0,sizeof(addrParents_vars));
-		addrParents_vars.usedPrimary = FALSE;
+		memset(&addrParents_vars.addrPrimary, 0, LENGTH_ADDR64b);
+        memset(&addrParents_vars.addrBackup , 0, LENGTH_ADDR64b);
+        addrParents_vars.usedPrimary = FALSE;
 		addrParents_vars.usedBackup  = FALSE;
 	}
+
+    //EDIT(HCC): Update neighbor indexes
+    for(i=0;i<MAXNUMNEIGHBORS;i+=1) {
+        if(neighbors_vars.neighbors[i].used) {
+            if(packetfunctions_sameAddress(
+                &addrParents_vars.addrPrimary,
+                &neighbors_vars.neighbors[i].addr_64b)
+            ) {
+                addrParents_vars.indexPrimary = i;
+            }
+            if(packetfunctions_sameAddress(
+                &addrParents_vars.addrBackup,
+                &neighbors_vars.neighbors[i].addr_64b)
+            ) {
+                addrParents_vars.indexBackup  = i;
+            }
+        }
+    }
 }
 
 void neighbors_get_retrial_statistics(uint32_t* num1, uint32_t* num2) {
 	memcpy(num1,&neighbors_vars.numTxTotal,4);
 	memcpy(num2,&neighbors_vars.numTxAckTotal,4);
+}
+
+// Dual Path
+bool neighbors_fromv6rpl_getBackupParentEui64(open_addr_t* addressToWrite, uint8_t addr_type, uint8_t* ParentIndex) {
+   uint8_t   i;
+   uint8_t   numNeighbors;
+   dagrank_t minRankVal;
+   uint8_t   minRankIdx;
+   
+   addressToWrite->type = ADDR_NONE;
+   
+   numNeighbors         = 0;
+   minRankVal           = MAXDAGRANK;
+   minRankIdx           = MAXNUMNEIGHBORS+1;
+
+   //===== step 1. Try to find preferred parent
+   for (i=0; i<MAXNUMNEIGHBORS; i++) {
+      if (neighbors_vars.neighbors[i].used==TRUE){
+         if (neighbors_vars.neighbors[i].parentPreference!=0 && (*ParentIndex) == i) {
+            if(neighbors_getNeighborNoResource(i)){
+               // EDIT(HCC):
+               // It's a Ok call from module icmpv6rpl,
+               // since icmpv6rpl does not allow neighbor without resource to be a preferred parent
+            }
+            else {
+               // EDIT(HCC):
+               // That weird, I got a preferred parent already.
+               // Does not need to find a backup one.
+               return FALSE;
+            }
+         }
+         // identify neighbor with lowest rank
+         if (neighbors_vars.neighbors[i].DAGrank < minRankVal) {
+            minRankVal=neighbors_vars.neighbors[i].DAGrank;
+            minRankIdx=i;
+         }
+         numNeighbors++;
+      }
+   }
+   
+   //===== step 2. (backup) Promote neighbor with min rank to preferred parent
+   if (numNeighbors > 0){
+      // promote neighbor
+      neighbors_vars.neighbors[minRankIdx].parentPreference       = TRUE; // EDIT(HCC): 'MAXPREFERENCE' is deprecated in newer version
+      neighbors_vars.neighbors[minRankIdx].stableNeighbor         = TRUE;
+      neighbors_vars.neighbors[minRankIdx].switchStabilityCounter = 0;
+      // return its address
+      memcpy(addressToWrite,&(neighbors_vars.neighbors[minRankIdx].addr_64b),sizeof(open_addr_t));
+      addressToWrite->type=ADDR_64B; 
+      *ParentIndex = minRankIdx; // EDIT(HCC): Update ParentIndex in icmpv6rpl
+   }
+   else return FALSE; //No Neighbor
+   
+   return TRUE;
+}
+
+// uhurricane
+
+bool neighbors_getPrimary(open_addr_t* addressToWrite) {
+   if(addrParents_vars.usedPrimary == TRUE){
+       if(addrParents_vars.indexPrimary <= MAXNUMNEIGHBORS) {
+           if(neighbors_isStableNeighborByIndex(addrParents_vars.indexPrimary)) {
+               memcpy(&addressToWrite->addr_64b,&(addrParents_vars.addrPrimary),LENGTH_ADDR64b);
+	           addressToWrite->type = ADDR_64B;
+	           return TRUE;
+           }
+       }
+   }
+   return FALSE;
+}
+
+bool neighbors_getBackup(open_addr_t* addressToWrite) {
+   if(addrParents_vars.usedBackup == TRUE){
+       if(addrParents_vars.indexBackup <= MAXNUMNEIGHBORS) {
+           if(neighbors_isStableNeighborByIndex(addrParents_vars.indexBackup)) {
+               memcpy(&addressToWrite->addr_64b,&(addrParents_vars.addrBackup),LENGTH_ADDR64b);
+               addressToWrite->type = ADDR_64B;
+               return TRUE;
+           }
+       }
+   }
+
+   return FALSE;
 }

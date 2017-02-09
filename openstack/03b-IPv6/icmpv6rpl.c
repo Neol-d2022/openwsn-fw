@@ -286,8 +286,14 @@ bool icmpv6rpl_getPreferredParentEui64(open_addr_t* addressToWrite) {
         neighbors_getNeighborNoResource(icmpv6rpl_vars.ParentIndex)==FALSE
     ){
         return neighbors_getNeighborEui64(addressToWrite,ADDR_64B,icmpv6rpl_vars.ParentIndex);
+    //} else if( //I got not preferred parent
+    //    neighbors_fromv6rpl_getBackupParentEui64(addressToWrite,ADDR_64B,&icmpv6rpl_vars.ParentIndex)==TRUE
+    //) {
+    //   // Backup parent is available. Use it.
+    //   icmpv6rpl_vars.haveParent=TRUE;
+    //   return TRUE;
     } else {
-        return FALSE;
+        return FALSE; //...And not backup parent either
     }
 }
 

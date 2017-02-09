@@ -385,7 +385,14 @@ void forwarding_getNextHop(open_addr_t* destination128b, open_addr_t* addressToW
       packetfunctions_ip128bToMac64b(destination128b,&temp_prefix64btoWrite,addressToWrite64b);
    } else {
       // destination is remote, send to preferred parent
-      icmpv6rpl_getPreferredParentEui64(addressToWrite64b);
+
+      //EDIT(HCC):
+      //           try to get primary next hop(Gateway assigned)
+      if(neighbors_getPrimary(addressToWrite64b) == TRUE) {}
+      //           then, backup one(Gateway assigned)
+      else if(neighbors_getBackup(addressToWrite64b) == TRUE) {}
+      //           If none of them are available...
+      else icmpv6rpl_getPreferredParentEui64(addressToWrite64b);
    }
 }
 

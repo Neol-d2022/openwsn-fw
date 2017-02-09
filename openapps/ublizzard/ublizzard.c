@@ -18,12 +18,14 @@
 #define UBLIZZARDPAYLOADLEN      21
 
 //=========================== variables =======================================
+ublizzard_vars_t ublizzard_vars;
 
 //=========================== prototypes ======================================
 
 //=========================== public ==========================================
 
 void ublizzard_init() {
+    ublizzard_vars.busySendingData      = FALSE;
 	leds_debug_on();
 	timerId_ublizzard    = opentimers_start(UBLIZZARDPERIOD,
                                                TIMER_PERIODIC,TIME_MS,
@@ -42,16 +44,20 @@ void ublizzard_timer_cb(opentimer_id_t id){
 
 void ublizzard_task_cb() {
    OpenQueueEntry_t*    pkt;
-#ifdef RETRIAL_STATISTICS
    open_addr_t*         myadd64;
    uint32_t             numTxTotal;
    uint32_t             numTxAckTotal;
-#else
-   uint8_t              i;
-#endif
 
    // don't run if not synch
-   if (ieee154e_isSynch() == FALSE) return;
+   if (ieee154e_isSynch() == FALSE){
+       ublizzard_vars.busySendingData = FALSE;
+       return;
+   }
+
+   if (ublizzard_vars.busySendingData==TRUE) {
+      // don't continue if I'm still sending a previous data packet
+      return;
+   }
 
    // don't run on dagroot
    if (idmanager_getIsDAGroot()) {
@@ -76,18 +82,13 @@ void ublizzard_task_cb() {
    pkt->owner                     = COMPONENT_UBLIZZARD;
    // Blizzard payload
    packetfunctions_reserveHeaderSize(pkt,UBLIZZARDPAYLOADLEN);
-#ifdef RETRIAL_STATISTICS
+
    myadd64                   = idmanager_getMyID(ADDR_64B);
    memcpy(&(pkt->payload[0]),myadd64->addr_64b,8);
    neighbors_get_retrial_statistics(&numTxTotal,&numTxAckTotal);
    memcpy(&(pkt->payload[8]),&numTxTotal,4);
    memcpy(&(pkt->payload[12]),&numTxAckTotal,4);
    ieee154e_getAsn(&(pkt->payload[16]));
-#else
-   for (i=0;i<UBLIZZARDPAYLOADLEN;i++) {
-      pkt->payload[i]             = i;
-   }
-#endif
 
    // metadata
    pkt->l4_protocol               = IANA_UDP;
@@ -101,11 +102,14 @@ void ublizzard_task_cb() {
       openqueue_freePacketBuffer(pkt);
    }
 
+   ublizzard_vars.busySendingData = TRUE;
+
    return;
 }
 
 // To-Do: Modify openudp_sendDone() in openudp.c
 void ublizzard_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
+   ublizzard_vars.busySendingData = FALSE;
    openqueue_freePacketBuffer(msg);
 }
 
