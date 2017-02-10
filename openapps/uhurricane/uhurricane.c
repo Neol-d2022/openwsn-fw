@@ -29,10 +29,10 @@ void uhurricane_init() {
 	                                           0x00, 0x12, 0x4b, 0x00, 0x06, 0x0d, 0x86, 0x99};
 	//neighbors_set2parents(test,2);
 
-	/*timerId_uhurricane    = opentimers_start(UHURRICANEPERIOD,
+	timerId_uhurricane    = opentimers_start(UHURRICANEPERIOD,
                                                TIMER_PERIODIC,TIME_MS,
-	                                           uhurricane_timer_cb);*/
-	//neighbors_set2parents(NULL,0);
+	                                           uhurricane_timer_cb);
+	neighbors_set2parents(NULL,0);
 }
 
 void uhurricane_receive(OpenQueueEntry_t* request) {
