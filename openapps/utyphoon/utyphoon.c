@@ -81,7 +81,7 @@ void utyphoon_task_cb() {
          (errorparameter_t)0,
          (errorparameter_t)0
       );
-      openqueue_freePacketBuffer(pkt);
+      //openqueue_freePacketBuffer(pkt);
       return;
    }
    // take ownership over that packet

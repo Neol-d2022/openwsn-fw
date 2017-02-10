@@ -45,6 +45,6 @@ void openapps_init(void) {
    // UDP
 //   uecho_init();
    utyphoon_init();
-   ublizzard_init();
-   uhurricane_init();
+   //ublizzard_init();
+   //uhurricane_init();
 }

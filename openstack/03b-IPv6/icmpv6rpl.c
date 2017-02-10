@@ -282,8 +282,8 @@ bool icmpv6rpl_getPreferredParentIndex(uint8_t* indexptr) {
 */
 bool icmpv6rpl_getPreferredParentEui64(open_addr_t* addressToWrite) {
     if (
-        icmpv6rpl_vars.haveParent && 
-        neighbors_getNeighborNoResource(icmpv6rpl_vars.ParentIndex)==FALSE
+        icmpv6rpl_vars.haveParent// && 
+        //neighbors_getNeighborNoResource(icmpv6rpl_vars.ParentIndex)==FALSE
     ){
         return neighbors_getNeighborEui64(addressToWrite,ADDR_64B,icmpv6rpl_vars.ParentIndex);
     //} else if( //I got not preferred parent

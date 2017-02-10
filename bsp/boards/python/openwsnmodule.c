@@ -75,6 +75,9 @@ static PyObject* OpenMote_getState(OpenMote* self) {
    PyObject* openserial_vars;
    PyObject* scheduler_vars;
    PyObject* scheduler_dbg;
+
+   PyObject* utyphoon_vars;
+   PyObject* ublizzard_vars;
    
    returnVal = PyDict_New();
    
@@ -200,6 +203,16 @@ static PyObject* OpenMote_getState(OpenMote* self) {
    scheduler_dbg = PyDict_New();
    // TODO
    PyDict_SetItemString(returnVal, "scheduler_dbg", scheduler_dbg);
+
+   // utyphoon_vars
+   utyphoon_vars = PyDict_New();
+   // TODO
+   PyDict_SetItemString(returnVal, "utyphoon_vars", utyphoon_vars);
+
+   // ublizzard_vars
+   ublizzard_vars = PyDict_New();
+   // TODO
+   PyDict_SetItemString(returnVal, "ublizzard_vars", ublizzard_vars);
    
    return returnVal;
 }
