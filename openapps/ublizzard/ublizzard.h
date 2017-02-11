@@ -15,7 +15,7 @@
 //=========================== variables =======================================
 opentimer_id_t       timerId_ublizzard;
 static const uint8_t ipAddr_RootBlizzard[] = {0xbb, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
-                                           0x14, 0x15, 0x92, 0xcc, 0x00, 0x00, 0x00, 0x01};
+                                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
 typedef struct {
    bool                 busySendingData;           // TRUE when busy sending a data packet

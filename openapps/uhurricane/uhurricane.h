@@ -15,7 +15,7 @@
 //=========================== variables =======================================
 opentimer_id_t       timerId_uhurricane;
 static const uint8_t ipAddr_RootHurricane[] = {0xbb, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
-                                           0x14, 0x15, 0x92, 0xcc, 0x00, 0x00, 0x00, 0x01};
+                                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
 //=========================== prototypes ======================================
 
