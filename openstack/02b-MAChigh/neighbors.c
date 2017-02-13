@@ -533,12 +533,13 @@ void  neighbors_removeOld() {
     for (i=0;i<MAXNUMNEIGHBORS;i++) {
         if (neighbors_vars.neighbors[i].used==1) {
             if (
-                i!= neighborIndexWithLowestRank[0] &&
-                i!= neighborIndexWithLowestRank[1] &&
-                i!= neighborIndexWithLowestRank[2] &&
-                i!= addrParents_vars.indexPrimary &&
-                i!= addrParents_vars.indexBackup
-                //EDIT(HCC): Should not remove gateway designated next hop neighbor from table.
+                //i!= neighborIndexWithLowestRank[0] &&
+                //i!= neighborIndexWithLowestRank[1] &&
+                //i!= neighborIndexWithLowestRank[2] &&
+                //i!= addrParents_vars.indexPrimary &&
+                //i!= addrParents_vars.indexBackup
+                ieee154e_asnDiff(&neighbors_vars.neighbors[i].asn) >= DESYNCTIMEOUT
+                //EDIT(HCC): Remove neighbor that have'n heard for DESYNCTIMEOUT slots
             ) {
                 haveParent = icmpv6rpl_getPreferredParentIndex(&j);
                 if (haveParent && (i==j)) { // this is our preferred parent, carefull!
@@ -664,6 +665,7 @@ void removeNeighbor(uint8_t neighborIndex) {
    neighbors_vars.neighbors[neighborIndex].asn.bytes0and1            = 0;
    neighbors_vars.neighbors[neighborIndex].asn.bytes2and3            = 0;
    neighbors_vars.neighbors[neighborIndex].asn.byte4                 = 0;
+   neighbors_vars.neighbors[neighborIndex].ushortid                  = 0;// ushortid
    neighbors_vars.neighbors[neighborIndex].f6PNORES                  = FALSE;
 }
 
@@ -838,4 +840,37 @@ bool neighbors_getBackup(open_addr_t* addressToWrite) {
    }
 
    return FALSE;
+}
+
+// ushortid
+
+uint8_t neighbors_nextNull_ushortid(void) {
+    uint8_t i;
+    for(i=0;i<MAXNUMNEIGHBORS;i+=1) {
+        if(neighbors_vars.neighbors[i].used==TRUE) {
+            if(neighbors_vars.neighbors[i].ushortid == 0)
+              break;
+        }
+    }
+    return i;
+}
+
+void neighbors_set_ushortid(uint8_t neighborIndex, uint16_t ushortid) {
+    if(neighbors_vars.neighbors[neighborIndex].used==TRUE) {
+        neighbors_vars.neighbors[neighborIndex].ushortid = ushortid;
+    }
+}
+
+uint16_t neighbors_get_ushortid(uint8_t neighborIndex) {
+    return neighbors_vars.neighbors[neighborIndex].ushortid;
+}
+
+uint8_t neighbors_addressToIndex(open_addr_t* neighbor) {
+   uint8_t i;
+   for (i=0;i<MAXNUMNEIGHBORS;i++) {
+      if (isThisRowMatching(neighbor,i)) {
+         break;
+      }
+   }
+   return i;
 }

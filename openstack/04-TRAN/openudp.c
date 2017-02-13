@@ -13,6 +13,7 @@
 #include "utyphoon.h"
 #include "ublizzard.h"
 #include "uhurricane.h"
+#include "ushortid.h"
 
 //=========================== variables =======================================
 
@@ -152,6 +153,9 @@ void openudp_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
       case WKP_UDP_HURRICANE:
          uhurricane_sendDone(msg, error);
          break;
+      case WKP_UDP_SHORTID:
+         ushortid_sendDone(msg, error);
+         break;
       default:
          openserial_printError(COMPONENT_OPENUDP,ERR_UNSUPPORTED_PORT_NUMBER,
                                (errorparameter_t)msg->l4_sourcePortORicmpv6Type,
@@ -229,6 +233,9 @@ void openudp_receive(OpenQueueEntry_t* msg) {
          break;
       case WKP_UDP_HURRICANE:
          uhurricane_receive(msg);
+         break;
+      case WKP_UDP_SHORTID:
+         ushortid_receive(msg);
          break;
       default:
          openserial_printError(COMPONENT_OPENUDP,ERR_UNSUPPORTED_PORT_NUMBER,

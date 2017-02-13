@@ -95,6 +95,7 @@ enum {
    WKP_UDP_TYPHOON                     =   15001,
    WKP_UDP_BLIZZARD                    =   15002,
    WKP_UDP_HURRICANE                   =   15003,
+   WKP_UDP_SHORTID                     =   15004,
 };
 
 //status elements
@@ -173,6 +174,7 @@ enum {
    COMPONENT_UTYPHOON                  = 0x28,
    COMPONENT_UBLIZZARD                 = 0x29,
    COMPONENT_UHURRICANE                = 0x2a,
+   COMPONENT_USHORTID                  = 0x2b,
 };
 
 /**
@@ -353,6 +355,7 @@ typedef struct {
    uint8_t          numWraps;//number of times the tx counter wraps. can be removed if memory is a restriction. also check openvisualizer then.
    asn_t            asn;
    uint8_t          joinPrio;
+   uint16_t         ushortid;
    bool             f6PNORES;
 } neighborRow_t;
 END_PACK

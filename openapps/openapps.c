@@ -22,6 +22,7 @@
 #include "utyphoon.h"
 #include "ublizzard.h"
 #include "uhurricane.h"
+#include "ushortid.h"
 
 //=========================== variables =======================================
 
@@ -47,4 +48,5 @@ void openapps_init(void) {
    utyphoon_init();
    ublizzard_init();
    uhurricane_init();
+   ushortid_init();
 }

@@ -20,6 +20,7 @@ defaultApps   = [
     'utyphoon',
     'ublizzard',
     'uhurricane',
+    'ushortid',
 ]
 if localEnv['board']=='python':
     defaultApps  += [
@@ -40,6 +41,7 @@ defaultAppsInit   = [
     'utyphoon',
     'ublizzard',
     'uhurricane',
+    'ushortid',
 ]
 
 # additional apps the user wants to build
