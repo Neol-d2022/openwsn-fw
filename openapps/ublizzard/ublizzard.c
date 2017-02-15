@@ -98,11 +98,11 @@ void ublizzard_task_cb() {
    memcpy(&pkt->l3_destinationAdd.addr_128b[0],&ipAddr_RootBlizzard,16);
 
    // send
+   ublizzard_vars.busySendingData = TRUE;
    if ((openudp_send(pkt))==E_FAIL) {
       openqueue_freePacketBuffer(pkt);
+      ublizzard_vars.busySendingData = FALSE;
    }
-
-   ublizzard_vars.busySendingData = TRUE;
 
    return;
 }

@@ -102,10 +102,11 @@ void utyphoon_task_cb() {
    memcpy(&pkt->l3_destinationAdd.addr_128b[0],&ipAddr_RootTyphoon,16);
 
    // send
+   utyphoon_vars.busySendingData = TRUE;
    if ((openudp_send(pkt))==E_FAIL) {
       openqueue_freePacketBuffer(pkt);
+      utyphoon_vars.busySendingData = FALSE;
    }
-   utyphoon_vars.busySendingData = TRUE;
 
    return;
 }
