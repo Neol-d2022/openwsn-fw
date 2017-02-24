@@ -10,6 +10,7 @@
 #include "leds.h"
 #include "neighbors.h"
 #include "icmpv6rpl.h"
+#include "ushortid.h"
 
 //=========================== defines =========================================
 
@@ -91,14 +92,15 @@ void uhurricane_timer_cb(opentimer_id_t id){
 }
 
 void uhurricane_task_cb() {
+   uint8_t              buf[64];
    OpenQueueEntry_t*    pkt;
    uint8_t              numNeighbor;
    uint8_t              code;
-   open_addr_t*         myadd64;
    dagrank_t            rank;
    uint16_t             residualEnergy;
+   uint16_t             myid;
    uint8_t              uhurricanePayloadLen;
-
+   uint8_t              neighborLen;
 
    // don't run if not synch
    if (ieee154e_isSynch() == FALSE) return;
@@ -111,6 +113,8 @@ void uhurricane_task_cb() {
 
    numNeighbor = neighbors_getNumNeighbors();
    if(numNeighbor==0) return;
+   myid        = ushortid_myid();
+   if(myid == 0) return;
 
    // create a Hurricane Report packet
    pkt = openqueue_getFreePacketBuffer(COMPONENT_UHURRICANE);
@@ -128,20 +132,21 @@ void uhurricane_task_cb() {
    pkt->creator                   = COMPONENT_UHURRICANE;
    pkt->owner                     = COMPONENT_UHURRICANE;
    // Hurricane payload
-   uhurricanePayloadLen = UHURRICANEPAYLOADLEN - (3-numNeighbor)*12;
+   neighbors_get3parents(buf, &neighborLen);
+   //uhurricanePayloadLen = UHURRICANEPAYLOADLEN - (3-numNeighbor)*12;
+   uhurricanePayloadLen = 7 + (neighborLen*6);
    packetfunctions_reserveHeaderSize(pkt,uhurricanePayloadLen);
 
-   code = 16 + numNeighbor;
-   memcpy(&(pkt->payload[ 0]),&code,sizeof(code));
-
-   myadd64                   = idmanager_getMyID(ADDR_64B);
-   memcpy(&(pkt->payload[ 1]),myadd64->addr_64b,sizeof(open_addr_t));
+   code                      = 16 + numNeighbor;
    rank                      = icmpv6rpl_getMyDAGrank();
-   memcpy(&(pkt->payload[ 9]),&rank,sizeof(rank));
-   residualEnergy = 100;
-   memcpy(&(pkt->payload[11]),&residualEnergy,sizeof(residualEnergy));
+   residualEnergy            = 100;
 
-   neighbors_get3parents(&(pkt->payload[13]));
+   memcpy(&(pkt->payload[ 0]),&code,sizeof(code));
+   (pkt->payload[1]) = (myid & 0xFF00) >> 8;
+   (pkt->payload[2]) = (myid & 0x00FF) >> 0;
+   memcpy(&(pkt->payload[ 3]),&rank,sizeof(rank));
+   memcpy(&(pkt->payload[ 5]),&residualEnergy,sizeof(residualEnergy));
+   memcpy(&(pkt->payload[ 7]),buf,neighborLen*6);
 
    // metadata
    pkt->l4_protocol               = IANA_UDP;

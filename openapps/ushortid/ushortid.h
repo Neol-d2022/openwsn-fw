@@ -19,6 +19,7 @@ typedef struct {
    uint8_t              desireAddr[8];
    bool                 busySendingData;           // TRUE when busy sending a data packet
    bool                 waitingRes;
+   bool                 askingSelf;
 } ushortid_vars_t;
 
 //=========================== variables =======================================
@@ -31,6 +32,7 @@ void ushortid_timer_cb(opentimer_id_t id);
 void ushortid_timeout_timer_cb(opentimer_id_t id);
 void ushortid_task_cb(void);
 void ushortid_sendDone(OpenQueueEntry_t* msg, owerror_t error);
+uint16_t ushortid_myid(void);
 /**
 \}
 \}

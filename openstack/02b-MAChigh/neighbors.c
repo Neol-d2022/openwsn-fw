@@ -40,8 +40,9 @@ void neighbors_init() {
    
    //EDIT(HCC): Initialization for Dual Path, uhurricane
    memset(&addrParents_vars,0,sizeof(addrParents_vars_t));
-   addrParents_vars.indexPrimary = MAXNUMNEIGHBORS;
-   addrParents_vars.indexBackup  = MAXNUMNEIGHBORS;
+   addrParents_vars.indexPrimary    = MAXNUMNEIGHBORS;
+   addrParents_vars.indexBackup     = MAXNUMNEIGHBORS;
+   addrParents_vars.lastReportIndex = 0;
 }
 
 //===== getters
@@ -687,15 +688,16 @@ bool isThisRowMatching(open_addr_t* address, uint8_t rowNumber) {
 
 // uhurricane
 
-void neighbors_get3parents(uint8_t* ptr){
-	uint8_t   i;
+void neighbors_get3parents(uint8_t* ptr, uint8_t* numOut){
+	uint8_t   i,j,k=MAXNUMNEIGHBORS;
 	uint8_t   numNeighbors;
 
 	numNeighbors = 0;
-	for (i=0; i<MAXNUMNEIGHBORS; i++) {
-		if (neighbors_vars.neighbors[i].used==TRUE){
-	        memcpy( ptr,&(neighbors_vars.neighbors[i].addr_64b.addr_64b),LENGTH_ADDR64b);
-	        ptr += LENGTH_ADDR64b;
+retry:
+	for (i = j = addrParents_vars.lastReportIndex; i<k; i++) {
+		if (neighbors_vars.neighbors[i].used==TRUE&&neighbors_vars.neighbors[i].ushortid!=0){
+	        memcpy( ptr,&(neighbors_vars.neighbors[i].ushortid),sizeof(neighbors_vars.neighbors[i].ushortid));
+	        ptr += sizeof(neighbors_vars.neighbors[i].ushortid);
 	        memcpy( ptr,&(neighbors_vars.neighbors[i].DAGrank),sizeof(dagrank_t));
 	        ptr += sizeof(dagrank_t);
 	        memcpy( ptr,&(neighbors_vars.neighbors[i].numTx),sizeof(uint8_t));
@@ -704,10 +706,40 @@ void neighbors_get3parents(uint8_t* ptr){
 	        ptr += sizeof(uint8_t);
 
 	        numNeighbors++;
-	        if(numNeighbors>3)
+	        if(numNeighbors>=6)
 	        	break;
 		}
 	}
+    if(i>=MAXNUMNEIGHBORS){
+        // (neold2022): Walked through the neighbor table.
+        if(numNeighbors==6) {
+            // (neold2022): We've found exactly 6 neighbors.
+            addrParents_vars.lastReportIndex = 0;
+            // (neold2022): Search start from index 0 next time.
+        }
+        else {
+            // (neold2022): Neighbor No. < 6 this time,
+            //              check if we are able to introduce new ones.
+            if(j==0) {
+                // (neold2022): last report index is 0, we have active neighbor no. < 6,
+                //              not able to report more.
+                addrParents_vars.lastReportIndex = 0;
+                // (neold2022): Search start from index 0 next time.
+            }
+            else {
+                // (neold2022): Active neighbor no. may >= 6,
+                k = j;
+                // (neold2022): Update upper index,
+                //              so no duplicated neighbors reported in this time
+                addrParents_vars.lastReportIndex = 0;
+                goto retry;
+                // (neold2022): Force re-search from index 0
+            }
+        }
+    }
+    else if(addrParents_vars.lastReportIndex + 1 >= MAXNUMNEIGHBORS) addrParents_vars.lastReportIndex = 0;
+    else addrParents_vars.lastReportIndex = i + 1;
+    *numOut = numNeighbors;
 }
 
 void neighbors_set2parents(uint8_t* ptr, uint8_t num){

@@ -57,6 +57,7 @@ typedef struct {
    open_addr_t        addrBackup;
    uint8_t            indexPrimary;
    uint8_t            indexBackup;
+   uint8_t            lastReportIndex;
    bool               usedPrimary;
    bool               usedBackup;
 } addrParents_vars_t;
@@ -105,7 +106,7 @@ void          neighbors_removeOld(void);
 bool          debugPrint_neighbors(void);
 
 // ublizzard
-void          neighbors_get3parents(uint8_t* ptr);
+void          neighbors_get3parents(uint8_t* ptr, uint8_t* numOut);
 void          neighbors_set2parents(uint8_t* ptr, uint8_t num);
 void          neighbors_get_retrial_statistics(uint32_t* num1, uint32_t* num2);
 
