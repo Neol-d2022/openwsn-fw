@@ -33,6 +33,7 @@ void ublizzard_init() {
 }
 
 void ublizzard_receive(OpenQueueEntry_t* request) {
+    openqueue_freePacketBuffer(request);
 	leds_debug_toggle();
 }
 
