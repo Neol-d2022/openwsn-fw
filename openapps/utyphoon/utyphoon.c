@@ -33,6 +33,7 @@ void utyphoon_init() {
 }
 
 void utyphoon_receive(OpenQueueEntry_t* request) {
+  openqueue_freePacketBuffer(request);
 	leds_debug_toggle();
 }
 
