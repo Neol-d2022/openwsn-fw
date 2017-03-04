@@ -11,6 +11,7 @@
 #include "neighbors.h"
 #include "icmpv6rpl.h"
 #include "ushortid.h"
+#include <stdio.h>
 
 //=========================== defines =========================================
 
@@ -144,7 +145,8 @@ void uhurricane_task_cb() {
    memcpy(&(pkt->payload[ 0]),&code,sizeof(code));
    (pkt->payload[1]) = (myid & 0xFF00) >> 8;
    (pkt->payload[2]) = (myid & 0x00FF) >> 0;
-   memcpy(&(pkt->payload[ 3]),&rank,sizeof(rank));
+   (pkt->payload[3]) = (rank & 0xFF00) >> 8;
+   (pkt->payload[4]) = (rank & 0x00FF) >> 0;
    memcpy(&(pkt->payload[ 5]),&residualEnergy,sizeof(residualEnergy));
    memcpy(&(pkt->payload[ 7]),buf,neighborLen*6);
 
