@@ -41,6 +41,9 @@
 //#include "tohlone_obj.h"
 //#include "tohlone_obj.h"
 #include "uecho_obj.h"
+#include "utyphoon_obj.h"
+#include "ublizzard_obj.h"
+#include "ushortid_obj.h"
 
 //=========================== prototypes ======================================
 
@@ -249,6 +252,10 @@ struct OpenMote {
    cwellknown_vars_t    cwellknown_vars;
    rrt_vars_t           rrt_vars;
    //tohlone_vars_t       tohlone_vars;
+   utyphoon_vars_t      utyphoon_vars;
+   ublizzard_vars_t     ublizzard_vars;
+   ushortid_vars_t      ushortid_vars;
+   neighbors_ushortid_vars_t neighbors_ushortid_vars;
 };
 
 #endif

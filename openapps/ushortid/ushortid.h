@@ -16,6 +16,7 @@ opentimer_id_t       timerId_ushortid_timeout;
 static const uint8_t ipAddr_RootShortID[] = {0xbb, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
                                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 typedef struct {
+   uint16_t             mysid;
    uint8_t              desireAddr[8];
    bool                 busySendingData;           // TRUE when busy sending a data packet
    bool                 waitingRes;

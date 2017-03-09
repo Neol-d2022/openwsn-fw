@@ -62,6 +62,10 @@ typedef struct {
    bool               usedBackup;
 } addrParents_vars_t;
 
+typedef struct {
+   uint16_t             ushortids[MAXNUMNEIGHBORS];
+} neighbors_ushortid_vars_t;
+
 //=========================== prototypes ======================================
 
 void          neighbors_init(void);

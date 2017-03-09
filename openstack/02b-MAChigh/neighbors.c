@@ -11,7 +11,7 @@
 static neighbors_vars_t neighbors_vars;
 addrParents_vars_t addrParents_vars;
 
-static uint16_t ushortid[MAXNUMNEIGHBORS];
+static neighbors_ushortid_vars_t neighbors_ushortid_vars;
 
 //=========================== prototypes ======================================
 
@@ -688,7 +688,7 @@ void removeNeighbor(uint8_t neighborIndex) {
    neighbors_vars.neighbors[neighborIndex].asn.bytes2and3            = 0;
    neighbors_vars.neighbors[neighborIndex].asn.byte4                 = 0;
    neighbors_vars.neighbors[neighborIndex].f6PNORES                  = FALSE;
-   ushortid[neighborIndex]                                           = 0;// ushortid
+   neighbors_ushortid_vars.ushortids[neighborIndex]                  = 0;// ushortid
 }
 
 //=========================== helpers =========================================
@@ -716,10 +716,10 @@ void neighbors_get3parents(uint8_t* ptr, uint8_t* numOut){
 	numNeighbors = 0;
 retry:
 	for (i = j = addrParents_vars.lastReportIndex; i<k; i++) {
-		if (neighbors_vars.neighbors[i].used==TRUE&&ushortid[i]!=0){
-	        ptr[0] = (ushortid[i] & 0xFF00) >> 8;
-            ptr[1] = (ushortid[i] & 0x00FF) >> 0;
-	        ptr += sizeof(ushortid[i]);
+		if (neighbors_vars.neighbors[i].used==TRUE&&neighbors_ushortid_vars.ushortids[i]!=0){
+	        ptr[0] = (neighbors_ushortid_vars.ushortids[i] & 0xFF00) >> 8;
+            ptr[1] = (neighbors_ushortid_vars.ushortids[i] & 0x00FF) >> 0;
+	        ptr += sizeof(neighbors_ushortid_vars.ushortids[i]);
 	        memcpy( ptr,&(neighbors_vars.neighbors[i].DAGrank),sizeof(dagrank_t));
 	        ptr += sizeof(dagrank_t);
 	        memcpy( ptr,&(neighbors_vars.neighbors[i].numTx),sizeof(uint8_t));
@@ -902,7 +902,7 @@ uint8_t neighbors_nextNull_ushortid(void) {
     uint8_t i;
     for(i=0;i<MAXNUMNEIGHBORS;i+=1) {
         if(neighbors_vars.neighbors[i].used==TRUE) {
-            if(ushortid[i] == 0)
+            if(neighbors_ushortid_vars.ushortids[i] == 0)
               break;
         }
     }
@@ -911,12 +911,12 @@ uint8_t neighbors_nextNull_ushortid(void) {
 
 void neighbors_set_ushortid(uint8_t neighborIndex, uint16_t _ushortid) {
     if(neighbors_vars.neighbors[neighborIndex].used==TRUE) {
-        ushortid[neighborIndex] = _ushortid;
+        neighbors_ushortid_vars.ushortids[neighborIndex] = _ushortid;
     }
 }
 
 uint16_t neighbors_get_ushortid(uint8_t neighborIndex) {
-    return ushortid[neighborIndex];
+    return neighbors_ushortid_vars.ushortids[neighborIndex];
 }
 
 uint8_t neighbors_addressToIndex(open_addr_t* neighbor) {

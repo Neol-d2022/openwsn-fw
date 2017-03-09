@@ -28,7 +28,6 @@
 //=========================== variables =======================================
 
 ushortid_vars_t ushortid_vars;
-uint16_t        mysid = 0;
 
 //=========================== prototypes ======================================
 
@@ -60,7 +59,7 @@ void ushortid_receive(OpenQueueEntry_t* request) {
             sid  = ((uint8_t)request->payload[8]) << 8;
             sid += ((uint8_t)request->payload[9]) << 0;
             if(ushortid_vars.askingSelf==TRUE) {
-                mysid = sid;
+                ushortid_vars.mysid = sid;
             }
             else {
                 addr.type = ADDR_64B;
@@ -74,10 +73,10 @@ void ushortid_receive(OpenQueueEntry_t* request) {
                 }
             }
             memset(ushortid_vars.desireAddr,0,sizeof(ushortid_vars.desireAddr));
+            ushortid_vars.askingSelf = FALSE;
         }
     }
 	openqueue_freePacketBuffer(request);
-    ushortid_vars.askingSelf = FALSE;
 }
 
 //timer fired, but we don't want to execute task in ISR mode
@@ -123,7 +122,7 @@ void ushortid_task_cb() {
       return;
    }
 
-   if(mysid == 0) {
+   if(ushortid_vars.mysid == 0) {
       askingSelf = TRUE;
       add64 = idmanager_getMyID(ADDR_64B);
    }
@@ -187,5 +186,5 @@ void ushortid_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
 }
 
 uint16_t ushortid_myid(void) {
-    return mysid;
+    return ushortid_vars.mysid;
 }
