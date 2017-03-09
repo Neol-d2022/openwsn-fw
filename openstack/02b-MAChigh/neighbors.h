@@ -119,7 +119,7 @@ bool neighbors_getBackup(open_addr_t* addressToWrite);
 
 // ushortid
 uint8_t neighbors_nextNull_ushortid(void);
-void neighbors_set_ushortid(uint8_t neighborIndex, uint16_t ushortid);
+void neighbors_set_ushortid(uint8_t neighborIndex, uint16_t _ushortid);
 uint16_t neighbors_get_ushortid(uint8_t neighborIndex);
 uint8_t neighbors_addressToIndex(open_addr_t* neighbor);
 /**
