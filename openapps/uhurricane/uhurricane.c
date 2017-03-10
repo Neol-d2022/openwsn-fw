@@ -38,7 +38,7 @@ void uhurricane_init() {
 }
 
 void uhurricane_receive(OpenQueueEntry_t* request) {
-	uint16_t          temp_l4_destination_port;
+	/*uint16_t          temp_l4_destination_port;
 	OpenQueueEntry_t* reply;
 	open_addr_t*      myadd64;
 
@@ -76,7 +76,7 @@ void uhurricane_receive(OpenQueueEntry_t* request) {
 	   openqueue_freePacketBuffer(reply);
 	}
 
-	////
+	//// */
 
 	if(request->length==16)
 		neighbors_set2parents(&request->payload[8],1);
