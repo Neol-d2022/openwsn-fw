@@ -147,7 +147,8 @@ void uhurricane_task_cb() {
    (pkt->payload[2]) = (myid & 0x00FF) >> 0;
    (pkt->payload[3]) = (rank & 0xFF00) >> 8;
    (pkt->payload[4]) = (rank & 0x00FF) >> 0;
-   memcpy(&(pkt->payload[ 5]),&residualEnergy,sizeof(residualEnergy));
+   (pkt->payload[5]) = (residualEnergy & 0xFF00) >> 8;
+   (pkt->payload[6]) = (residualEnergy & 0x00FF) >> 0;
    memcpy(&(pkt->payload[ 7]),buf,neighborLen*6);
 
    // metadata
