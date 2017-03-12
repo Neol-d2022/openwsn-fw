@@ -225,6 +225,7 @@ struct OpenMote {
    // l2b
    sixtop_vars_t        sixtop_vars;
    neighbors_vars_t     neighbors_vars;
+   addrParents_vars_t   addrParents_vars;
    schedule_vars_t      schedule_vars;
    sf0_vars_t           sf0_vars;
    // l2a
