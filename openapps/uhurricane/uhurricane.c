@@ -11,6 +11,7 @@
 #include "neighbors.h"
 #include "icmpv6rpl.h"
 #include "ushortid.h"
+#include "icmpv6rpl.h"
 #include <stdio.h>
 
 //=========================== defines =========================================
@@ -103,6 +104,7 @@ void uhurricane_task_cb() {
    uint16_t             myid;
    uint8_t              uhurricanePayloadLen;
    uint8_t              neighborLen;
+   uint8_t              parentIdx;
 
    // don't run if not synch
    if (ieee154e_isSynch() == FALSE) return;
@@ -110,6 +112,11 @@ void uhurricane_task_cb() {
    // don't run on dagroot
    if (idmanager_getIsDAGroot()) {
       opentimers_stop(timerId_uhurricane);
+      return;
+   }
+
+   // don't run when there is no parent
+   if (icmpv6rpl_getPreferredParentIndex(&parentIdx) == FALSE) {
       return;
    }
 

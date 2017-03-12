@@ -817,7 +817,7 @@ void neighbors_set2parents(uint8_t* ptr, uint8_t num){
                 &neighbors_vars.neighbors[i].addr_64b)
             ) {
                 addrParents_vars.indexBackup = i;
-                icmpv6rpl_notify_backupAssigned(icmpv6rpl_notify_backupAssigned);
+                icmpv6rpl_notify_backupAssigned(addrParents_vars.indexBackup);
             }
         }
     }

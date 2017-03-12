@@ -9,6 +9,7 @@
 #include "idmanager.h"
 #include "leds.h"
 #include "neighbors.h"
+#include "icmpv6rpl.h"
 
 //=========================== defines =========================================
 
@@ -48,6 +49,7 @@ void ublizzard_task_cb() {
    open_addr_t*         myadd64;
    uint32_t             numTxTotal;
    uint32_t             numTxAckTotal;
+   uint8_t              parentIdx;
 
    // don't run if not synch
    if (ieee154e_isSynch() == FALSE){
@@ -63,6 +65,11 @@ void ublizzard_task_cb() {
    // don't run on dagroot
    if (idmanager_getIsDAGroot()) {
       opentimers_stop(timerId_ublizzard);
+      return;
+   }
+
+   // don't run when there is no parent
+   if (icmpv6rpl_getPreferredParentIndex(&parentIdx) == FALSE) {
       return;
    }
 

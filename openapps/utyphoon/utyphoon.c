@@ -9,6 +9,7 @@
 #include "idmanager.h"
 #include "leds.h"
 #include "neighbors.h"
+#include "icmpv6rpl.h"
 
 //=========================== defines =========================================
 
@@ -53,6 +54,7 @@ void utyphoon_task_cb() {
    OpenQueueEntry_t*    pkt;
    open_addr_t*         myadd64;
    uint32_t             sensorData;
+   uint8_t              parentIdx;
 
    // don't run if not synch
    if (ieee154e_isSynch() == FALSE){
@@ -63,6 +65,11 @@ void utyphoon_task_cb() {
    // don't run on dagroot
    if (idmanager_getIsDAGroot()) {
       opentimers_stop(timerId_utyphoon);
+      return;
+   }
+
+   // don't run when there is no parent
+   if (icmpv6rpl_getPreferredParentIndex(&parentIdx) == FALSE) {
       return;
    }
    

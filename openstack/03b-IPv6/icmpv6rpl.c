@@ -138,7 +138,6 @@ void icmpv6rpl_init() {
                                                 icmpv6rpl_timer_DAO_cb
                                              );
    // GA
-   icmpv6rpl_vars.ParentIndexRPL     = MAXNUMNEIGHBORS;
    icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
    icmpv6rpl_vars.ParentIndexBackup  = MAXNUMNEIGHBORS;
 }
@@ -392,52 +391,50 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
     // (neold2022): Round 1, primary
     if(!foundBetterParent && icmpv6rpl_vars.ParentIndexPrimary != MAXNUMNEIGHBORS) {
         // (neold2022): Primary parent is up
-        i = icmpv6rpl_vars.ParentIndexPrimary
+        i = icmpv6rpl_vars.ParentIndexPrimary;
         if (neighbors_isStableNeighborByIndex(i)) { // in use and link is stable
             // neighbor marked as NORES can't be parent
-            if (neighbors_getNeighborNoResource(i)==TRUE) {
-                continue;
+            if (neighbors_getNeighborNoResource(i)==FALSE) {
+                // get link cost to this neighbor
+                rankIncrease=neighbors_getLinkMetric(i);
+                // get this neighbor's advertized rank
+                neighborRank=neighbors_getNeighborRank(i);
+                // if this neighbor has unknown/infinite rank, pass on it
+                if (neighborRank!=DEFAULTDAGRANK) {
+                    // compute tentative cost of full path to root through this neighbor
+                    tentativeDAGrank = (uint32_t)neighborRank+rankIncrease;
+                    if (tentativeDAGrank > 65535) {tentativeDAGrank = 65535;}
+                    foundBetterParent=TRUE;
+                    icmpv6rpl_vars.myDAGrank    = (uint16_t)tentativeDAGrank;
+                    icmpv6rpl_vars.ParentIndex  = i;
+                    icmpv6rpl_vars.rankIncrease = rankIncrease;
+                }
             }
-        }
-        // get link cost to this neighbor
-        rankIncrease=neighbors_getLinkMetric(i);
-        // get this neighbor's advertized rank
-        neighborRank=neighbors_getNeighborRank(i);
-        // if this neighbor has unknown/infinite rank, pass on it
-        if (neighborRank!=DEFAULTDAGRANK) {
-            // compute tentative cost of full path to root through this neighbor
-            tentativeDAGrank = (uint32_t)neighborRank+rankIncrease;
-            if (tentativeDAGrank > 65535) {tentativeDAGrank = 65535;}
-            foundBetterParent=TRUE;
-            icmpv6rpl_vars.myDAGrank    = (uint16_t)tentativeDAGrank;
-            icmpv6rpl_vars.ParentIndex  = i;
-            icmpv6rpl_vars.rankIncrease = rankIncrease;
         }
     }
 
     // (neold2022): Round 2, backup
     if(!foundBetterParent && icmpv6rpl_vars.ParentIndexBackup != MAXNUMNEIGHBORS) {
-        // (neold2022): Primary parent is up
-        i = icmpv6rpl_vars.ParentIndexBackup
+        // (neold2022): Backup parent is up
+        i = icmpv6rpl_vars.ParentIndexBackup;
         if (neighbors_isStableNeighborByIndex(i)) { // in use and link is stable
             // neighbor marked as NORES can't be parent
-            if (neighbors_getNeighborNoResource(i)==TRUE) {
-                continue;
+            if (neighbors_getNeighborNoResource(i)==FALSE) {
+                // get link cost to this neighbor
+                rankIncrease=neighbors_getLinkMetric(i);
+                // get this neighbor's advertized rank
+                neighborRank=neighbors_getNeighborRank(i);
+                // if this neighbor has unknown/infinite rank, pass on it
+                if (neighborRank!=DEFAULTDAGRANK) {
+                    // compute tentative cost of full path to root through this neighbor
+                    tentativeDAGrank = (uint32_t)neighborRank+rankIncrease;
+                    if (tentativeDAGrank > 65535) {tentativeDAGrank = 65535;}
+                    foundBetterParent=TRUE;
+                    icmpv6rpl_vars.myDAGrank    = (uint16_t)tentativeDAGrank;
+                    icmpv6rpl_vars.ParentIndex  = i;
+                    icmpv6rpl_vars.rankIncrease = rankIncrease;
+                }
             }
-        }
-        // get link cost to this neighbor
-        rankIncrease=neighbors_getLinkMetric(i);
-        // get this neighbor's advertized rank
-        neighborRank=neighbors_getNeighborRank(i);
-        // if this neighbor has unknown/infinite rank, pass on it
-        if (neighborRank!=DEFAULTDAGRANK) {
-            // compute tentative cost of full path to root through this neighbor
-            tentativeDAGrank = (uint32_t)neighborRank+rankIncrease;
-            if (tentativeDAGrank > 65535) {tentativeDAGrank = 65535;}
-            foundBetterParent=TRUE;
-            icmpv6rpl_vars.myDAGrank    = (uint16_t)tentativeDAGrank;
-            icmpv6rpl_vars.ParentIndex  = i;
-            icmpv6rpl_vars.rankIncrease = rankIncrease;
         }
     }
 

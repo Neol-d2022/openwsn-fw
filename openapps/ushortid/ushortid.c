@@ -14,6 +14,7 @@
 //#include "ADC_Channel.h"
 #include "idmanager.h"
 #include "IEEE802154E.h"
+#include "icmpv6rpl.h"
 
 //=========================== defines =========================================
 
@@ -99,6 +100,7 @@ void ushortid_task_cb() {
    open_addr_t*         add64;
    uint16_t             shortID = 0;
    uint8_t              nidx;
+   uint8_t              parentIdx;
    bool                 askingSelf;
 
    // don't run if not synch
@@ -110,6 +112,11 @@ void ushortid_task_cb() {
    // don't run on dagroot
    if (idmanager_getIsDAGroot()) {
       opentimers_stop(timerId_ushortid);
+      return;
+   }
+
+   // don't run when there is no parent
+   if (icmpv6rpl_getPreferredParentIndex(&parentIdx) == FALSE) {
       return;
    }
    
