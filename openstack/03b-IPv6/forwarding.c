@@ -388,11 +388,12 @@ void forwarding_getNextHop(open_addr_t* destination128b, open_addr_t* addressToW
 
       //EDIT(HCC):
       //           try to get primary next hop(Gateway assigned)
-      if(neighbors_getPrimary(addressToWrite64b) == TRUE) {}
+      //if(neighbors_getPrimary(addressToWrite64b) == TRUE) {}
       //           then, backup one(Gateway assigned)
-      else if(neighbors_getBackup(addressToWrite64b) == TRUE) {}
+      //else if(neighbors_getBackup(addressToWrite64b) == TRUE) {}
       //           If none of them are available...
-      else icmpv6rpl_getPreferredParentEui64(addressToWrite64b);
+      //else
+      icmpv6rpl_getPreferredParentEui64(addressToWrite64b);
    }
 }
 
