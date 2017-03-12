@@ -568,6 +568,12 @@ void  neighbors_removeOld() {
                     icmpv6rpl_killPreferredParent();
                     icmpv6rpl_updateMyDAGrankAndParentSelection();
                 }
+                if (i == addrParents_vars.indexPrimary) { // GA assign primary parent has gone
+                    addrParents_vars.indexPrimary = MAXNUMNEIGHBORS;
+                }
+                if (i == addrParents_vars.indexPrimary) { // GA assign backup parent has gone
+                    addrParents_vars.indexBackup = MAXNUMNEIGHBORS;
+                }
                 //EDIT(HCC): f6PNORES tells that the neighbor has no room for ADDING more cells.
                 //           It should be able to delete cells even if this flag has set.
                 //if (neighbors_vars.neighbors[i].f6PNORES == FALSE){
