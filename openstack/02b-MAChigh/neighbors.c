@@ -570,9 +570,12 @@ void  neighbors_removeOld() {
                 }
                 if (i == addrParents_vars.indexPrimary) { // GA assign primary parent has gone
                     addrParents_vars.indexPrimary = MAXNUMNEIGHBORS;
+                    icmpv6rpl_notify_primaryGone();
                 }
-                if (i == addrParents_vars.indexPrimary) { // GA assign backup parent has gone
+                if (i == addrParents_vars.indexBackup) { // GA assign backup parent has gone
                     addrParents_vars.indexBackup = MAXNUMNEIGHBORS;
+                    icmpv6rpl_notify_backupGone();
+
                 }
                 //EDIT(HCC): f6PNORES tells that the neighbor has no room for ADDING more cells.
                 //           It should be able to delete cells even if this flag has set.
@@ -646,11 +649,13 @@ void registerNewNeighbor(open_addr_t* address,
             if(addrParents_vars.usedPrimary == TRUE){
                 if(packetfunctions_sameAddress(&(addrParents_vars.addrPrimary),&neighbors_vars.neighbors[i].addr_64b)) {
                     addrParents_vars.indexPrimary = i;
+                    icmpv6rpl_notify_primaryAssigned(addrParents_vars.indexPrimary);
                 }
             }
             if(addrParents_vars.usedBackup == TRUE){
                 if(packetfunctions_sameAddress(&(addrParents_vars.addrBackup),&neighbors_vars.neighbors[i].addr_64b)) {
                     addrParents_vars.indexBackup = i;
+                    icmpv6rpl_notify_backupAssigned(addrParents_vars.indexBackup);
                 }
             }
             
@@ -775,6 +780,8 @@ void neighbors_set2parents(uint8_t* ptr, uint8_t num){
 
     addrParents_vars.indexPrimary = MAXNUMNEIGHBORS;
     addrParents_vars.indexBackup  = MAXNUMNEIGHBORS;
+    icmpv6rpl_notify_primaryGone();
+    icmpv6rpl_notify_backupGone();
 	if(num==2){
 		memcpy(&addrParents_vars.addrPrimary, ptr  , LENGTH_ADDR64b);
 		memcpy(&addrParents_vars.addrBackup , ptr+8, LENGTH_ADDR64b);
@@ -803,12 +810,14 @@ void neighbors_set2parents(uint8_t* ptr, uint8_t num){
                 &neighbors_vars.neighbors[i].addr_64b)
             ) {
                 addrParents_vars.indexPrimary = i;
+                icmpv6rpl_notify_primaryAssigned(addrParents_vars.indexPrimary);
             }
             if(packetfunctions_sameAddress(
                 &addrParents_vars.addrBackup,
                 &neighbors_vars.neighbors[i].addr_64b)
             ) {
-                addrParents_vars.indexBackup  = i;
+                addrParents_vars.indexBackup = i;
+                icmpv6rpl_notify_backupAssigned(icmpv6rpl_notify_backupAssigned);
             }
         }
     }
