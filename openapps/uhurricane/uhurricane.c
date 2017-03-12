@@ -83,6 +83,7 @@ void uhurricane_receive(OpenQueueEntry_t* request) {
 	else if(request->length==24)
 		neighbors_set2parents(&request->payload[8],2);
 
+    printf("%hu Received routing rule. Next hop: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], request->payload[8], request->payload[9], request->payload[10], request->payload[11], request->payload[12], request->payload[13], request->payload[14], request->payload[15]);
 	openqueue_freePacketBuffer(request);
 }
 
