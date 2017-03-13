@@ -409,8 +409,11 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
                     icmpv6rpl_vars.ParentIndex  = i;
                     icmpv6rpl_vars.rankIncrease = rankIncrease;
                 }
+                else icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
             }
+            else icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
         }
+        else icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
     }
 
     // (neold2022): Round 2, backup
@@ -434,8 +437,11 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
                     icmpv6rpl_vars.ParentIndex  = i;
                     icmpv6rpl_vars.rankIncrease = rankIncrease;
                 }
+                else icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
             }
+            else icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
         }
+        else icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
     }
 
     // (neold2022): Round 3, RPL
@@ -783,7 +789,11 @@ void sendDAO() {
    //=== transit option -- from RFC 6550, page 55 - 1 transit information header per parent is required. 
    //getting only preferred parent as transit
    numTransitParents=0;
-   icmpv6rpl_getPreferredParentEui64(&address);
+   if(icmpv6rpl_getPreferredParentEui64(&address)==FALSE) {
+      openqueue_freePacketBuffer(msg);
+      icmpv6rpl_updateMyDAGrankAndParentSelection();
+      return;
+   }
    packetfunctions_writeAddress(msg,&address,OW_BIG_ENDIAN);
    prefix=idmanager_getMyID(ADDR_PREFIX);
    packetfunctions_writeAddress(msg,prefix,OW_BIG_ENDIAN);
