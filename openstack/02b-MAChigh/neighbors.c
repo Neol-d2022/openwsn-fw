@@ -783,21 +783,27 @@ void neighbors_set2parents(uint8_t* ptr, uint8_t num){
     icmpv6rpl_notify_primaryGone();
     icmpv6rpl_notify_backupGone();
 	if(num==2){
-		memcpy(&addrParents_vars.addrPrimary, ptr  , LENGTH_ADDR64b);
-		memcpy(&addrParents_vars.addrBackup , ptr+8, LENGTH_ADDR64b);
+		memcpy(&addrParents_vars.addrPrimary.addr_64b, ptr  , LENGTH_ADDR64b);
+		memcpy(&addrParents_vars.addrBackup.addr_64b , ptr+8, LENGTH_ADDR64b);
+        addrParents_vars.addrPrimary.type = ADDR_64B;
+        addrParents_vars.addrBackup.type  = ADDR_64B;
         addrParents_vars.usedPrimary = TRUE;
 		addrParents_vars.usedBackup  = TRUE;
 
 	}
 	else if(num==1){
-		memcpy(&addrParents_vars.addrPrimary, ptr, LENGTH_ADDR64b);
-        memset(&addrParents_vars.addrBackup , 0, LENGTH_ADDR64b);
+		memcpy(&addrParents_vars.addrPrimary.addr_64b, ptr, LENGTH_ADDR64b);
+        memset(&addrParents_vars.addrBackup.addr_64b , 0, LENGTH_ADDR64b);
+        addrParents_vars.addrPrimary.type = ADDR_64B;
+        addrParents_vars.addrBackup.type  = ADDR_64B;
         addrParents_vars.usedPrimary = TRUE;
 		addrParents_vars.usedBackup  = FALSE;
 	}
 	else{
-		memset(&addrParents_vars.addrPrimary, 0, LENGTH_ADDR64b);
-        memset(&addrParents_vars.addrBackup , 0, LENGTH_ADDR64b);
+		memset(&addrParents_vars.addrPrimary.addr_64b, 0, LENGTH_ADDR64b);
+        memset(&addrParents_vars.addrBackup.addr_64b , 0, LENGTH_ADDR64b);
+        addrParents_vars.addrPrimary.type = ADDR_64B;
+        addrParents_vars.addrBackup.type  = ADDR_64B;
         addrParents_vars.usedPrimary = FALSE;
 		addrParents_vars.usedBackup  = FALSE;
 	}
