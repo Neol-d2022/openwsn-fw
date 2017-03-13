@@ -28,7 +28,7 @@ utyphoon_vars_t utyphoon_vars;
 void utyphoon_init() {
 	utyphoon_vars.busySendingData      = FALSE;
   leds_debug_on();
-	timerId_utyphoon    = opentimers_start(UTYPHOONPERIOD,
+	utyphoon_vars.timerId_utyphoon    = opentimers_start(UTYPHOONPERIOD,
                                          TIMER_PERIODIC,TIME_MS,
 	                                       utyphoon_timer_cb);
 }
@@ -64,7 +64,7 @@ void utyphoon_task_cb() {
 
    // don't run on dagroot
    if (idmanager_getIsDAGroot()) {
-      opentimers_stop(timerId_utyphoon);
+      opentimers_stop(utyphoon_vars.timerId_utyphoon);
       return;
    }
 

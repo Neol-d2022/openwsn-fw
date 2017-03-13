@@ -13,10 +13,11 @@
 //=========================== typedef =========================================
 
 //=========================== variables =======================================
-opentimer_id_t       timerId_utyphoon;
+
 static const uint8_t ipAddr_RootTyphoon[] = {0xbb, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
                                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 typedef struct {
+   opentimer_id_t       timerId_utyphoon;
    bool                 busySendingData;           // TRUE when busy sending a data packet
 } utyphoon_vars_t;
 

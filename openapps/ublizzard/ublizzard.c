@@ -28,7 +28,7 @@ ublizzard_vars_t ublizzard_vars;
 void ublizzard_init() {
     ublizzard_vars.busySendingData      = FALSE;
 	leds_debug_on();
-	timerId_ublizzard    = opentimers_start(UBLIZZARDPERIOD,
+	ublizzard_vars.timerId_ublizzard    = opentimers_start(UBLIZZARDPERIOD,
                                                TIMER_PERIODIC,TIME_MS,
 	                                           ublizzard_timer_cb);
 }
@@ -64,7 +64,7 @@ void ublizzard_task_cb() {
 
    // don't run on dagroot
    if (idmanager_getIsDAGroot()) {
-      opentimers_stop(timerId_ublizzard);
+      opentimers_stop(ublizzard_vars.timerId_ublizzard);
       return;
    }
 

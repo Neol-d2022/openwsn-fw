@@ -555,12 +555,12 @@ void  neighbors_removeOld() {
     for (i=0;i<MAXNUMNEIGHBORS;i++) {
         if (neighbors_vars.neighbors[i].used==1) {
             if (
-                //i!= neighborIndexWithLowestRank[0] &&
-                //i!= neighborIndexWithLowestRank[1] &&
-                //i!= neighborIndexWithLowestRank[2] &&
-                //i!= addrParents_vars.indexPrimary &&
-                //i!= addrParents_vars.indexBackup
-                ieee154e_asnDiff(&neighbors_vars.neighbors[i].asn) >= DESYNCTIMEOUT
+                i!= neighborIndexWithLowestRank[0] &&
+                i!= neighborIndexWithLowestRank[1] &&
+                i!= neighborIndexWithLowestRank[2] &&
+                i!= addrParents_vars.indexPrimary &&
+                i!= addrParents_vars.indexBackup
+                //ieee154e_asnDiff(&neighbors_vars.neighbors[i].asn) >= DESYNCTIMEOUT
                 //EDIT(HCC): Remove neighbor that have'n heard for DESYNCTIMEOUT slots
             ) {
                 haveParent = icmpv6rpl_getPreferredParentIndex(&j);

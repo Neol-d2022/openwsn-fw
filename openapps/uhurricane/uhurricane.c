@@ -23,6 +23,8 @@
 
 //=========================== variables =======================================
 
+uhurricane_vars_t uhurricane_vars;
+
 //=========================== prototypes ======================================
 
 //=========================== public ==========================================
@@ -32,9 +34,13 @@ void uhurricane_init() {
 	                                           0x00, 0x12, 0x4b, 0x00, 0x06, 0x0d, 0x86, 0x99};
 	//neighbors_set2parents(test,2);
 
-	timerId_uhurricane    = opentimers_start(UHURRICANEPERIOD,
-                                               TIMER_PERIODIC,TIME_MS,
-	                                           uhurricane_timer_cb);
+	uhurricane_vars.timerId_uhurricane           = opentimers_start(UHURRICANEPERIOD,
+                                                 TIMER_PERIODIC,TIME_MS,
+	                                               uhurricane_timer_cb);
+  uhurricane_vars.timerId_uhurricane_timeout   = opentimers_start(UHURRICANEPERIOD,
+                                                 TIMER_ONESHOT,TIME_MS,
+                                                 uhurricane_timeout_cb);
+  opentimers_stop(uhurricane_vars.timerId_uhurricane_timeout);
 	neighbors_set2parents(NULL,0);
 }
 
@@ -86,12 +92,22 @@ void uhurricane_receive(OpenQueueEntry_t* request) {
 
     printf("%hu Received routing rule(%d). Next hop: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], request->length, request->payload[8], request->payload[9], request->payload[10], request->payload[11], request->payload[12], request->payload[13], request->payload[14], request->payload[15]);
 	openqueue_freePacketBuffer(request);
+  opentimers_setPeriod(uhurricane_vars.timerId_uhurricane_timeout,TIMER_ONESHOT,UHURRICANEPERIOD);
+  opentimers_restart(uhurricane_vars.timerId_uhurricane_timeout);
 }
 
 //timer fired, but we don't want to execute task in ISR mode
 //instead, push task to scheduler with COAP priority, and let scheduler take care of it
 void uhurricane_timer_cb(opentimer_id_t id){
    scheduler_push_task(uhurricane_task_cb,TASKPRIO_COAP);
+}
+
+void uhurricane_timeout_reset_cb() {
+   neighbors_set2parents(NULL,0);
+}
+
+void uhurricane_timeout_cb(opentimer_id_t id){
+  scheduler_push_task(uhurricane_timeout_reset_cb,TASKPRIO_COAP);
 }
 
 void uhurricane_task_cb() {
@@ -111,7 +127,7 @@ void uhurricane_task_cb() {
 
    // don't run on dagroot
    if (idmanager_getIsDAGroot()) {
-      opentimers_stop(timerId_uhurricane);
+      opentimers_stop(uhurricane_vars.timerId_uhurricane);
       return;
    }
 

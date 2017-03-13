@@ -36,13 +36,13 @@ ushortid_vars_t ushortid_vars;
 
 void ushortid_init() {
    memset(&ushortid_vars,0,sizeof(ushortid_vars));
-   timerId_ushortid          = opentimers_start(USHORTIDPERIOD,
+   ushortid_vars.timerId_ushortid          = opentimers_start(USHORTIDPERIOD,
                                                 TIMER_PERIODIC,TIME_MS,
                                                 ushortid_timer_cb);
-   timerId_ushortid_timeout  = opentimers_start(USHORTIDTIMEOUT,
+   ushortid_vars.timerId_ushortid_timeout  = opentimers_start(USHORTIDTIMEOUT,
                                                 TIMER_ONESHOT,TIME_MS,
                                                 ushortid_timeout_timer_cb);
-   opentimers_stop(timerId_ushortid_timeout);
+   opentimers_stop(ushortid_vars.timerId_ushortid_timeout);
 }
 
 //=========================== private =========================================
@@ -55,8 +55,7 @@ void ushortid_receive(OpenQueueEntry_t* request) {
     if(ushortid_vars.waitingRes==TRUE) {
         if(memcmp(request->payload+0,ushortid_vars.desireAddr,sizeof(ushortid_vars.desireAddr)) == 0) {
             //This is the addr we asked for
-            ushortid_vars.waitingRes = FALSE;
-            opentimers_stop(timerId_ushortid_timeout);
+            opentimers_stop(ushortid_vars.timerId_ushortid_timeout);
             sid  = ((uint8_t)request->payload[8]) << 8;
             sid += ((uint8_t)request->payload[9]) << 0;
             if(ushortid_vars.askingSelf==TRUE) {
@@ -74,6 +73,7 @@ void ushortid_receive(OpenQueueEntry_t* request) {
                 }
             }
             memset(ushortid_vars.desireAddr,0,sizeof(ushortid_vars.desireAddr));
+            ushortid_vars.waitingRes = FALSE;
             ushortid_vars.askingSelf = FALSE;
         }
     }
@@ -111,7 +111,7 @@ void ushortid_task_cb() {
 
    // don't run on dagroot
    if (idmanager_getIsDAGroot()) {
-      opentimers_stop(timerId_ushortid);
+      opentimers_stop(ushortid_vars.timerId_ushortid);
       return;
    }
 
@@ -187,8 +187,8 @@ void ushortid_task_cb() {
 void ushortid_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
    ushortid_vars.busySendingData = FALSE;
    ushortid_vars.waitingRes = TRUE;
-   opentimers_setPeriod(timerId_ushortid_timeout,TIMER_ONESHOT,USHORTIDTIMEOUT);
-   opentimers_restart(timerId_ushortid_timeout);
+   opentimers_setPeriod(ushortid_vars.timerId_ushortid_timeout,TIMER_ONESHOT,USHORTIDTIMEOUT);
+   opentimers_restart(ushortid_vars.timerId_ushortid_timeout);
    openqueue_freePacketBuffer(msg);
 }
 

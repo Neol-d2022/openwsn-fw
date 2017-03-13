@@ -43,6 +43,7 @@
 #include "uecho_obj.h"
 #include "utyphoon_obj.h"
 #include "ublizzard_obj.h"
+#include "uhurricane_obj.h"
 #include "ushortid_obj.h"
 
 //=========================== prototypes ======================================
@@ -255,6 +256,7 @@ struct OpenMote {
    //tohlone_vars_t       tohlone_vars;
    utyphoon_vars_t      utyphoon_vars;
    ublizzard_vars_t     ublizzard_vars;
+   uhurricane_vars_t uhurricane_vars;
    ushortid_vars_t      ushortid_vars;
    neighbors_ushortid_vars_t neighbors_ushortid_vars;
 };
