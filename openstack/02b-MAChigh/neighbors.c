@@ -45,6 +45,8 @@ void neighbors_init() {
    addrParents_vars.indexPrimary    = MAXNUMNEIGHBORS;
    addrParents_vars.indexBackup     = MAXNUMNEIGHBORS;
    addrParents_vars.lastReportIndex = 0;
+   addrParents_vars.addrPrimary.type = ADDR_64B;
+   addrParents_vars.addrBackup.type  = ADDR_64B;
 }
 
 //===== getters
@@ -785,8 +787,6 @@ void neighbors_set2parents(uint8_t* ptr, uint8_t num){
 	if(num==2){
 		memcpy(&addrParents_vars.addrPrimary.addr_64b, ptr  , LENGTH_ADDR64b);
 		memcpy(&addrParents_vars.addrBackup.addr_64b , ptr+8, LENGTH_ADDR64b);
-        addrParents_vars.addrPrimary.type = ADDR_64B;
-        addrParents_vars.addrBackup.type  = ADDR_64B;
         addrParents_vars.usedPrimary = TRUE;
 		addrParents_vars.usedBackup  = TRUE;
 
@@ -794,16 +794,12 @@ void neighbors_set2parents(uint8_t* ptr, uint8_t num){
 	else if(num==1){
 		memcpy(&addrParents_vars.addrPrimary.addr_64b, ptr, LENGTH_ADDR64b);
         memset(&addrParents_vars.addrBackup.addr_64b , 0, LENGTH_ADDR64b);
-        addrParents_vars.addrPrimary.type = ADDR_64B;
-        addrParents_vars.addrBackup.type  = ADDR_64B;
         addrParents_vars.usedPrimary = TRUE;
 		addrParents_vars.usedBackup  = FALSE;
 	}
 	else{
 		memset(&addrParents_vars.addrPrimary.addr_64b, 0, LENGTH_ADDR64b);
         memset(&addrParents_vars.addrBackup.addr_64b , 0, LENGTH_ADDR64b);
-        addrParents_vars.addrPrimary.type = ADDR_64B;
-        addrParents_vars.addrBackup.type  = ADDR_64B;
         addrParents_vars.usedPrimary = FALSE;
 		addrParents_vars.usedBackup  = FALSE;
 	}
@@ -894,7 +890,7 @@ bool neighbors_getPrimary(open_addr_t* addressToWrite) {
    if(addrParents_vars.usedPrimary == TRUE){
        if(addrParents_vars.indexPrimary <= MAXNUMNEIGHBORS) {
            if(neighbors_isStableNeighborByIndex(addrParents_vars.indexPrimary)) {
-               memcpy(&addressToWrite->addr_64b,&(addrParents_vars.addrPrimary),LENGTH_ADDR64b);
+               memcpy(&addressToWrite->addr_64b,&(addrParents_vars.addrPrimary.addr_64b),LENGTH_ADDR64b);
 	           addressToWrite->type = ADDR_64B;
 	           return TRUE;
            }
@@ -907,7 +903,7 @@ bool neighbors_getBackup(open_addr_t* addressToWrite) {
    if(addrParents_vars.usedBackup == TRUE){
        if(addrParents_vars.indexBackup <= MAXNUMNEIGHBORS) {
            if(neighbors_isStableNeighborByIndex(addrParents_vars.indexBackup)) {
-               memcpy(&addressToWrite->addr_64b,&(addrParents_vars.addrBackup),LENGTH_ADDR64b);
+               memcpy(&addressToWrite->addr_64b,&(addrParents_vars.addrBackup.addr_64b),LENGTH_ADDR64b);
                addressToWrite->type = ADDR_64B;
                return TRUE;
            }
