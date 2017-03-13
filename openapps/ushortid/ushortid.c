@@ -43,6 +43,7 @@ void ushortid_init() {
                                                 TIMER_ONESHOT,TIME_MS,
                                                 ushortid_timeout_timer_cb);
    opentimers_stop(ushortid_vars.timerId_ushortid_timeout);
+   ushortid_vars.backoff = 60;
 }
 
 //=========================== private =========================================
@@ -129,6 +130,11 @@ void ushortid_task_cb() {
       return;
    }
 
+   if(ushortid_vars.backoff != 0) {
+      ushortid_vars.backoff = ushortid_vars.backoff - 1;
+      return;
+   }
+
    if(ushortid_vars.mysid == 0) {
       askingSelf = TRUE;
       add64 = idmanager_getMyID(ADDR_64B);
@@ -179,6 +185,7 @@ void ushortid_task_cb() {
       ushortid_vars.busySendingData = FALSE;
       ushortid_vars.askingSelf = FALSE;
       memset(ushortid_vars.desireAddr,0,sizeof(ushortid_vars.desireAddr));
+      ushortid_vars.backoff = 10;
    }
 
    return;

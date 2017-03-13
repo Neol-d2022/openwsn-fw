@@ -19,6 +19,7 @@ typedef struct {
    opentimer_id_t       timerId_ushortid_timeout;
    uint16_t             mysid;
    uint8_t              desireAddr[8];
+   uint8_t              backoff;
    bool                 busySendingData;           // TRUE when busy sending a data packet
    bool                 waitingRes;
    bool                 askingSelf;
