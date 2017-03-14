@@ -492,14 +492,15 @@ void  neighbors_removeOld() {
     }
     
     // neighbors marked as NO_RES will never removed.
+    // EDIT(neold2022): don't know why. A mote marked as NO_RES may not be so after re-schedule
     
     // first round
     lowestRank = MAXDAGRANK;
     for (i=0;i<MAXNUMNEIGHBORS;i++) {
         if (neighbors_vars.neighbors[i].used==1) {
             if (
-                lowestRank>neighbors_vars.neighbors[i].DAGrank && 
-                neighbors_vars.neighbors[i].f6PNORES == FALSE
+                lowestRank>neighbors_vars.neighbors[i].DAGrank// && 
+                //neighbors_vars.neighbors[i].f6PNORES == FALSE
             ){
                 lowestRank = neighbors_vars.neighbors[i].DAGrank;
                 neighborIndexWithLowestRank[0] = i;
@@ -518,8 +519,8 @@ void  neighbors_removeOld() {
         if (neighbors_vars.neighbors[i].used==1) {
             if (
                 lowestRank>neighbors_vars.neighbors[i].DAGrank &&
-                i != neighborIndexWithLowestRank[0]           && 
-                neighbors_vars.neighbors[i].f6PNORES == FALSE
+                i != neighborIndexWithLowestRank[0]//           && 
+                //neighbors_vars.neighbors[i].f6PNORES == FALSE
             ){
                 lowestRank = neighbors_vars.neighbors[i].DAGrank;
                 neighborIndexWithLowestRank[1] = i;
@@ -539,8 +540,8 @@ void  neighbors_removeOld() {
             if (
                 lowestRank>neighbors_vars.neighbors[i].DAGrank &&
                 i != neighborIndexWithLowestRank[0]           &&
-                i != neighborIndexWithLowestRank[1]           && 
-                neighbors_vars.neighbors[i].f6PNORES == FALSE
+                i != neighborIndexWithLowestRank[1]//           && 
+                //neighbors_vars.neighbors[i].f6PNORES == FALSE
             ){
                 lowestRank = neighbors_vars.neighbors[i].DAGrank;
                 neighborIndexWithLowestRank[2] = i;
