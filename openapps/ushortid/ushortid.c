@@ -20,7 +20,7 @@
 
 /// inter-packet period (in ms)
 #define USHORTIDPERIOD       1000
-#define USHORTIDTIMEOUT     10000
+#define USHORTIDTIMEOUTMUL   20
 
 #define USHORTIDPAYLOADLEN  10
 
@@ -39,11 +39,11 @@ void ushortid_init() {
    ushortid_vars.timerId_ushortid          = opentimers_start(USHORTIDPERIOD,
                                                 TIMER_PERIODIC,TIME_MS,
                                                 ushortid_timer_cb);
-   ushortid_vars.timerId_ushortid_timeout  = opentimers_start(USHORTIDTIMEOUT,
+   ushortid_vars.timerId_ushortid_timeout  = opentimers_start(USHORTIDTIMEOUTMUL,
                                                 TIMER_ONESHOT,TIME_MS,
                                                 ushortid_timeout_timer_cb);
    opentimers_stop(ushortid_vars.timerId_ushortid_timeout);
-   ushortid_vars.backoff = 60;
+   ushortid_vars.backoff = 20;
 }
 
 //=========================== private =========================================
@@ -92,6 +92,7 @@ void ushortid_timeout_timer_cb(opentimer_id_t id){
       ushortid_vars.waitingRes = FALSE; //Query timed out
       ushortid_vars.askingSelf = FALSE;
       memset(ushortid_vars.desireAddr,0,sizeof(ushortid_vars.desireAddr));
+      ushortid_vars.backoff = 10;
    }
 }
 
@@ -194,7 +195,7 @@ void ushortid_task_cb() {
 void ushortid_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
    ushortid_vars.busySendingData = FALSE;
    ushortid_vars.waitingRes = TRUE;
-   opentimers_setPeriod(ushortid_vars.timerId_ushortid_timeout,TIMER_ONESHOT,USHORTIDTIMEOUT);
+   opentimers_setPeriod(ushortid_vars.timerId_ushortid_timeout,TIMER_ONESHOT,USHORTIDTIMEOUTMUL*(uint32_t)icmpv6rpl_getMyDAGrank());
    opentimers_restart(ushortid_vars.timerId_ushortid_timeout);
    openqueue_freePacketBuffer(msg);
 }
