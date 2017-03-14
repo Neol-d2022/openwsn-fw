@@ -204,6 +204,7 @@ void sixtop_request(uint8_t code, open_addr_t* neighbor, uint8_t numCells){
             (errorparameter_t)0,
             (errorparameter_t)0
         );
+        sixtop_vars.handler = SIX_HANDLER_NONE;
         return ;
     }
 
@@ -234,6 +235,7 @@ void sixtop_request(uint8_t code, open_addr_t* neighbor, uint8_t numCells){
             (errorparameter_t)0,
             (errorparameter_t)0
         );
+        sixtop_vars.handler = SIX_HANDLER_NONE;
         return;
     }
    
@@ -334,6 +336,7 @@ void sixtop_addORremoveCellByInfo(uint8_t code,open_addr_t* neighbor,cellInfo_ht
             (errorparameter_t)0,
             (errorparameter_t)0
         );
+        sixtop_vars.handler = SIX_HANDLER_NONE;
         return;
     }
    
