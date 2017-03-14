@@ -189,6 +189,7 @@ void     icmpv6rpl_notify_backupGone(void);               // GA
 void     icmpv6rpl_notify_primaryAssigned(uint8_t index); // GA
 void     icmpv6rpl_notify_backupAssigned(uint8_t index);  // GA
 
+void     icmpv6rpl_notify_loopOccured(void);
 /**
 \}
 \}

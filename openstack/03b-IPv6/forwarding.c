@@ -325,6 +325,7 @@ void forwarding_receive(
                     (errorparameter_t) senderRank,
                     (errorparameter_t) icmpv6rpl_getMyDAGrank()
                 );
+                icmpv6rpl_notify_loopOccured();
             }
             forwarding_createRplOption(rpl_option, rpl_option->flags);
             // resend as if from upper layer
@@ -738,6 +739,7 @@ owerror_t forwarding_send_internal_SourceRouting(
                 (errorparameter_t) senderRank,
                 (errorparameter_t) icmpv6rpl_getMyDAGrank()
             );
+            icmpv6rpl_notify_loopOccured();
         }
         forwarding_createRplOption(rpl_option, rpl_option->flags);
         // toss the IP in IP 6LoRH
