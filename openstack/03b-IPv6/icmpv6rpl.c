@@ -295,6 +295,7 @@ bool icmpv6rpl_getPreferredParentEui64(open_addr_t* addressToWrite) {
     //   icmpv6rpl_vars.haveParent=TRUE;
     //   return TRUE;
     } else {
+        addressToWrite->type = ADDR_NONE;
         return FALSE; //...And not backup parent either
     }
 }
