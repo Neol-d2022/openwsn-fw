@@ -139,12 +139,12 @@ void sixtop_init() {
         sixtop_maintenance_timer_cb
     );
     
-    sixtop_vars.timeoutTimerId      = opentimers_start(
-        SIX2SIX_TIMEOUT_MS,
-        TIMER_ONESHOT,
-        TIME_MS,
-        sixtop_timeout_timer_cb
-    );
+    //sixtop_vars.timeoutTimerId      = opentimers_start(
+    //    SIX2SIX_TIMEOUT_MS,
+    //    TIMER_ONESHOT,
+    //    TIME_MS,
+    //    sixtop_timeout_timer_cb
+    //);
 }
 
 void sixtop_setKaPeriod(uint16_t kaPeriod) {
@@ -966,12 +966,12 @@ void sixtop_six2six_sendDone(OpenQueueEntry_t* msg, owerror_t error){
         sixtop_vars.six2six_state == SIX_STATE_WAIT_CLEARRESPONSE
     ){
         // start timeout timer if I am waiting for a response
-        opentimers_setPeriod(
-            sixtop_vars.timeoutTimerId,
+        sixtop_vars.timeoutTimerId      = opentimers_start(
+            SIX2SIX_TIMEOUT_MS,
+            TIMER_ONESHOT,
             TIME_MS,
-            SIX2SIX_TIMEOUT_MS
+            sixtop_timeout_timer_cb
         );
-        opentimers_restart(sixtop_vars.timeoutTimerId);
     }
     // discard reservation packets this component has created
     openqueue_freePacketBuffer(msg);
