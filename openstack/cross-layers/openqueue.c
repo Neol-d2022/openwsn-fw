@@ -5,6 +5,7 @@
 #include "IEEE802154E.h"
 #include "ieee802154_security_driver.h"
 #include "sf0.h"
+#include "schedule.h"
 
 
 //=========================== defination =====================================
@@ -101,12 +102,22 @@ OpenQueueEntry_t* openqueue_getFreePacketBuffer(uint8_t creator) {
          }
       }
    }
-   if(j < QUEUELENGTH >> 1) {
+   k = 0;   
+   if(j < (QUEUELENGTH >> 1)) {
       // Half full
-      for (i=0,j=0;i<MAXNUMNEIGHBORS;i++) {
-         if(bandwidthNeighbor[i] > 0) {
-            sf0_addCell_neighbor_task(neighbors_indexToAddress(i), bandwidthNeighbor[i]);
-            break;
+      for (i=0;i<MAXNUMNEIGHBORS;i++) {
+         if(bandwidthNeighbor[i] > k) {
+            k = bandwidthNeighbor[i];
+            j = i;
+         }
+      }
+      if(k > 0) {
+         if(schedule_getNumberOfFreeEntries() == 0) {}
+         else if(schedule_getNumberOfFreeEntries() < bandwidthNeighbor[j]) {
+            sf0_addCell_neighbor_task(neighbors_indexToAddress(j), schedule_getNumberOfFreeEntries());
+         }
+         else {
+             sf0_addCell_neighbor_task(neighbors_indexToAddress(j), bandwidthNeighbor[j]);
          }
       }
    }
