@@ -126,6 +126,9 @@ uint8_t neighbors_nextNull_ushortid(void);
 void neighbors_set_ushortid(uint8_t neighborIndex, uint16_t _ushortid);
 uint16_t neighbors_get_ushortid(uint8_t neighborIndex);
 uint8_t neighbors_addressToIndex(open_addr_t* neighbor);
+open_addr_t* neighbors_indexToAddress(uint8_t index);
+
+bool neighbors_isMyNeighbor(open_addr_t* neighbor);
 /**
 \}
 \}

@@ -834,10 +834,15 @@ void schedule_housekeeping(){
     DISABLE_INTERRUPTS();
 
     for(i=0;i<MAXACTIVESLOTS;i++) {
+        if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX || schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
+            if(neighbors_isMyNeighbor(&(schedule_vars.scheduleBuf[i].neighbor))==FALSE){
+                sixtop_request(IANA_6TOP_CMD_CLEAR,&(schedule_vars.scheduleBuf[i].neighbor),1);
+            }
+        }
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX){
             // remove Tx cell if it's scheduled to non-preferred parent
             if (icmpv6rpl_getPreferredParentEui64(&neighbor)==TRUE) {
-                if(packetfunctions_sameAddress(&neighbor,&(schedule_vars.scheduleBuf[i].neighbor))==FALSE){
+                if(packetfunctions_sameAddress(&neighbor,&(schedule_vars.scheduleBuf[i].neighbor))==FALSE&&ieee154e_asnDiff(&(schedule_vars.scheduleBuf[i].lastUsedAsn))>DESYNCTIMEOUT){
                     if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
                        // one sixtop transcation is happening, only one instance at one time
                        continue;

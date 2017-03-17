@@ -163,3 +163,26 @@ void sf0_bandwidthEstimate_task(void){
 void sf0_appPktPeriod(uint8_t numAppPacketsPerSlotFrame){
     sf0_vars.numAppPacketsPerSlotFrame = numAppPacketsPerSlotFrame;
 }
+
+void sf0_notifyBandwidthTooLow() {
+    sf0_vars.numAppPacketsPerSlotFrame += 1;
+}
+
+void sf0_notifyBandwidthTooHigh() {
+    if(sf0_vars.numAppPacketsPerSlotFrame > 0) {
+        sf0_vars.numAppPacketsPerSlotFrame -= 1;
+    }
+}
+
+void sf0_addCell_neighbor_task(open_addr_t *neighbor, uint8_t numCells) {
+   if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+      // one sixtop transcation is happening, only one instance at one time
+      return;
+   }
+   // call sixtop
+   sixtop_request(
+      IANA_6TOP_CMD_ADD,
+      neighbor,
+      numCells
+   );
+}

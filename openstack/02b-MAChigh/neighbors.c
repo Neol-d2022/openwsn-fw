@@ -946,3 +946,15 @@ uint8_t neighbors_addressToIndex(open_addr_t* neighbor) {
    }
    return i;
 }
+
+open_addr_t* neighbors_indexToAddress(uint8_t index) {
+    if(index < MAXNUMNEIGHBORS) {
+        if(neighbors_vars.neighbors[index].used==TRUE) {
+            return &(neighbors_vars.neighbors[index].addr_64b);
+        } else return NULL;
+    } else return NULL;
+}
+
+bool neighbors_isMyNeighbor(open_addr_t* neighbor) {
+    return isNeighbor(neighbor);
+}

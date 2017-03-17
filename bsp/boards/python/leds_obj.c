@@ -126,6 +126,7 @@ void leds_error_blink(OpenMote* self) {
    result     = PyObject_CallObject(self->callback[MOTE_NOTIF_leds_error_blink],NULL);
    if (result == NULL) {
       printf("[CRITICAL] leds_error_blink() returned NULL\r\n");
+      *(int*)(0) = 0;
       return;
    }
    Py_DECREF(result);
