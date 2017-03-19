@@ -19,7 +19,7 @@
 //=========================== defines =========================================
 
 /// inter-packet period (in ms)
-#define USHORTIDPERIOD       1000
+#define USHORTIDPERIOD       3000
 #define USHORTIDTIMEOUT      20000
 
 #define USHORTIDPAYLOADLEN  10

@@ -325,7 +325,7 @@ void forwarding_receive(
                     (errorparameter_t) senderRank,
                     (errorparameter_t) icmpv6rpl_getMyDAGrank()
                 );
-                //icmpv6rpl_notify_loopOccured();
+                icmpv6rpl_notify_loopOccured();
             }
             forwarding_createRplOption(rpl_option, rpl_option->flags);
             // resend as if from upper layer
@@ -416,6 +416,7 @@ owerror_t forwarding_send_internal_RoutingTable(
       uint32_t*              flow_label,
       uint8_t                fw_SendOrfw_Rcv
    ) {
+   uint8_t index;
    
    // retrieve the next hop from the routing table
    forwarding_getNextHop(&(msg->l3_destinationAdd),&(msg->l2_nextORpreviousHop));
@@ -427,6 +428,11 @@ owerror_t forwarding_send_internal_RoutingTable(
          (errorparameter_t)0
       );
       return E_FAIL;
+   }
+
+   index = neighbors_addressToIndex(&(msg->l2_nextORpreviousHop));
+   if(index < MAXNUMNEIGHBORS) {
+         neighbors_setEstimatedBandwidth(index, neighbors_getEstimatedBandwidth(index) + 1);
    }
    
    if (ipv6_outer_header->src.type != ADDR_NONE){
@@ -469,6 +475,7 @@ owerror_t forwarding_send_internal_SourceRouting(
     uint8_t              size;
     uint8_t              next_size;
     uint8_t              hlen;
+    uint8_t              index;
     open_addr_t          firstAddr;
     open_addr_t          nextAddr;
     open_addr_t          temp_prefix;
@@ -739,13 +746,17 @@ owerror_t forwarding_send_internal_SourceRouting(
                 (errorparameter_t) senderRank,
                 (errorparameter_t) icmpv6rpl_getMyDAGrank()
             );
-            //icmpv6rpl_notify_loopOccured();
+            icmpv6rpl_notify_loopOccured();
         }
         forwarding_createRplOption(rpl_option, rpl_option->flags);
         // toss the IP in IP 6LoRH
         packetfunctions_tossHeader(msg, ipv6_outer_header->header_length);
     } else {
         RH3_length = 0;
+    }
+    index = neighbors_addressToIndex(&(msg->l2_nextORpreviousHop));
+    if(index < MAXNUMNEIGHBORS) {
+        neighbors_setEstimatedBandwidth(index, neighbors_getEstimatedBandwidth(index) + 1);
     }
     
     // send to next lower layer
@@ -788,4 +799,3 @@ void forwarding_createRplOption(rpl_option_ht* rpl_option, uint8_t flags) {
     
     rpl_option->flags = (flags & ~I_FLAG & ~K_FLAG) | (I<<1) | K;
 }
-

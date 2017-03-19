@@ -64,6 +64,8 @@ typedef struct {
 
 typedef struct {
    uint16_t             ushortids[MAXNUMNEIGHBORS];
+   uint8_t              estimatedBandwidth[MAXNUMNEIGHBORS];
+   uint8_t              historyBandwidth[MAXNUMNEIGHBORS];
 } neighbors_ushortid_vars_t;
 
 //=========================== prototypes ======================================
@@ -129,6 +131,14 @@ uint8_t neighbors_addressToIndex(open_addr_t* neighbor);
 open_addr_t* neighbors_indexToAddress(uint8_t index);
 
 bool neighbors_isMyNeighbor(open_addr_t* neighbor);
+
+uint8_t neighbors_getEstimatedBandwidth(uint8_t index);
+uint8_t neighbors_getEstimatedBandwidthRealistic(uint8_t index);
+void neighbors_setEstimatedBandwidth(uint8_t index, uint8_t cells);
+
+void neighbors_getStat(uint8_t index,uint8_t *tx, uint8_t *txAck);
+void neighbors_notif_newSlot(void);
+uint8_t neighbors_getBandwidthRequest(uint16_t *actual, uint16_t *effective, uint16_t *estimated, uint16_t *lastused);
 /**
 \}
 \}

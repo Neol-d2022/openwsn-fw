@@ -31,6 +31,7 @@ void openqueue_init() {
    for (i=0;i<QUEUELENGTH;i++){
       openqueue_reset_entry(&(openqueue_vars.queue[i]));
    }
+   openqueue_vars.jammedTimes = 0;
 }
 
 /**
@@ -67,7 +68,6 @@ get a new packet buffer to start creating a new packet.
          it could not be allocated (buffer full or not synchronized).
 */
 OpenQueueEntry_t* openqueue_getFreePacketBuffer(uint8_t creator) {
-   uint8_t bandwidthNeighbor[MAXNUMNEIGHBORS];
    uint8_t i,j,k;
    INTERRUPT_DECLARATION();
    DISABLE_INTERRUPTS();
@@ -79,48 +79,35 @@ OpenQueueEntry_t* openqueue_getFreePacketBuffer(uint8_t creator) {
    }
    
    // if you get here, I will try to allocate a buffer for you
+   for (i=0,j=0;i<QUEUELENGTH;i++) {
+      if (openqueue_vars.queue[i].owner==COMPONENT_NULL) {
+         // It's free
+         j += 1;
+      }
+   }
+   
+   if(j <= 9 && (openqueue_vars.jammedTimes <= 9 || j <= 1)) {
+      for (i=0;i<QUEUELENGTH;i++) {
+         if(openqueue_vars.queue[i].owner!=COMPONENT_NULL) {
+            if(openqueue_vars.queue[i].creator!=COMPONENT_IEEE802154E&&openqueue_vars.queue[i].creator!=COMPONENT_SIXTOP_RES&&openqueue_vars.queue[i].creator!=COMPONENT_SIXTOP) {
+               if(openqueue_vars.queue[i].l2_nextORpreviousHop.type == ADDR_64B) {
+                  k = neighbors_addressToIndex(&(openqueue_vars.queue[i].l2_nextORpreviousHop));
+                  if(k < MAXNUMNEIGHBORS) {
+                     neighbors_setEstimatedBandwidth(k, neighbors_getEstimatedBandwidth(k) + 1);
+                  }
+               }
+            }
+         }
+      }
+      openqueue_vars.jammedTimes += 1;
+   }
    
    // if there is no space left for high priority queue, don't reserve
    if (openqueue_isHighPriorityEntryEnough()==FALSE && creator>COMPONENT_SIXTOP_RES){
       ENABLE_INTERRUPTS();
       return NULL;
    }
-   
-   for (i=0,j=0;i<QUEUELENGTH;i++) {
-      if (openqueue_vars.queue[i].owner==COMPONENT_NULL) {
-         // It's free
-         j += 1;
-      }
-      if (openqueue_vars.queue[i].owner==COMPONENT_SIXTOP_TO_IEEE802154E) {
-         // It's being sent
-         if(openqueue_vars.queue[i].l2_nextORpreviousHop.type == ADDR_64B)
-         {
-            k = neighbors_addressToIndex(&(openqueue_vars.queue[i].l2_nextORpreviousHop));
-            if(k < MAXNUMNEIGHBORS) {
-               bandwidthNeighbor[k] += 1;
-            }
-         }
-      }
-   }
-   k = 0;   
-   if(j < (QUEUELENGTH >> 1)) {
-      // Half full
-      for (i=0;i<MAXNUMNEIGHBORS;i++) {
-         if(bandwidthNeighbor[i] > k) {
-            k = bandwidthNeighbor[i];
-            j = i;
-         }
-      }
-      if(k > 0) {
-         if(schedule_getNumberOfFreeEntries() == 0) {}
-         else if(schedule_getNumberOfFreeEntries() < bandwidthNeighbor[j]) {
-            sf0_addCell_neighbor_task(neighbors_indexToAddress(j), schedule_getNumberOfFreeEntries());
-         }
-         else {
-             sf0_addCell_neighbor_task(neighbors_indexToAddress(j), bandwidthNeighbor[j]);
-         }
-      }
-   }
+
    // walk through queue and find free entry
    for (i=0;i<QUEUELENGTH;i++) {
       if (openqueue_vars.queue[i].owner==COMPONENT_NULL) {
@@ -144,9 +131,16 @@ OpenQueueEntry_t* openqueue_getFreePacketBuffer(uint8_t creator) {
 \returns E_FAIL when the module could not find the specified packet buffer.
 */
 owerror_t openqueue_freePacketBuffer(OpenQueueEntry_t* pkt) {
-   uint8_t i;//,j,k;
+   uint8_t i,j;
    INTERRUPT_DECLARATION();
    DISABLE_INTERRUPTS();
+   for (i=0,j=0;i<QUEUELENGTH;i++) {
+      if (openqueue_vars.queue[i].owner==COMPONENT_NULL) {
+         // It's free
+         j += 1;
+      }
+   }
+   if(j > 8) openqueue_vars.jammedTimes = 0;
    for (i=0;i<QUEUELENGTH;i++) {
       if (&openqueue_vars.queue[i]==pkt) {
          if (openqueue_vars.queue[i].owner==COMPONENT_NULL) {
@@ -156,12 +150,6 @@ owerror_t openqueue_freePacketBuffer(OpenQueueEntry_t* pkt) {
                                   (errorparameter_t)0);
          }
          openqueue_reset_entry(&(openqueue_vars.queue[i]));
-         //for (j=0,k=0;j<QUEUELENGTH;j++) {
-         //   if (openqueue_vars.queue[j].owner==COMPONENT_NULL) {
-         //      k += 1;
-         //   }
-         //}
-         //if(k == QUEUELENGTH) sf0_notifyBandwidthTooHigh();
          ENABLE_INTERRUPTS();
          return E_SUCCESS;
       }

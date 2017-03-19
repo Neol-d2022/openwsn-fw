@@ -470,16 +470,24 @@ uint16_t neighbors_getLinkMetric(uint8_t index) {
 void  neighbors_removeOld() {
     uint8_t    i, j;
     bool       haveParent;
-    uint8_t    neighborIndexWithLowestRank[3];
-    dagrank_t  lowestRank;
+    //uint8_t    neighborIndexWithLowestRank[3];
+    //dagrank_t  lowestRank;
     PORT_RADIOTIMER_WIDTH timeSinceHeard;
     
+    haveParent = icmpv6rpl_getPreferredParentIndex(&j);
     // remove old neighbor
     for (i=0;i<MAXNUMNEIGHBORS;i++) {
         if (neighbors_vars.neighbors[i].used==1) {
             timeSinceHeard = ieee154e_asnDiff(&neighbors_vars.neighbors[i].asn);
-            if (timeSinceHeard>DESYNCTIMEOUT) {
-                haveParent = icmpv6rpl_getPreferredParentIndex(&j);
+            if (timeSinceHeard>DESYNCTIMEOUT || neighbors_vars.neighbors[i].f6PNORES == TRUE) {
+                if (i == addrParents_vars.indexPrimary) { // GA assign primary parent has gone
+                    addrParents_vars.indexPrimary = MAXNUMNEIGHBORS;
+                    icmpv6rpl_notify_primaryGone();
+                }
+                if (i == addrParents_vars.indexBackup) { // GA assign backup parent has gone
+                    addrParents_vars.indexBackup = MAXNUMNEIGHBORS;
+                    icmpv6rpl_notify_backupGone();
+                }
                 if (haveParent && (i==j)) { // this is our preferred parent, carefully!
                     icmpv6rpl_killPreferredParent();
                     removeNeighbor(i);
@@ -492,10 +500,9 @@ void  neighbors_removeOld() {
     }
     
     // neighbors marked as NO_RES will never removed.
-    // EDIT(neold2022): don't know why. A mote marked as NO_RES may not be so after re-schedule
     
     // first round
-    lowestRank = MAXDAGRANK;
+    /*lowestRank = MAXDAGRANK;
     for (i=0;i<MAXNUMNEIGHBORS;i++) {
         if (neighbors_vars.neighbors[i].used==1) {
             if (
@@ -587,7 +594,7 @@ void  neighbors_removeOld() {
                 //}
             }
         }
-    }
+    }*/
 }
 
 //===== debug
@@ -703,6 +710,8 @@ void removeNeighbor(uint8_t neighborIndex) {
    neighbors_vars.neighbors[neighborIndex].asn.byte4                 = 0;
    neighbors_vars.neighbors[neighborIndex].f6PNORES                  = FALSE;
    neighbors_ushortid_vars.ushortids[neighborIndex]                  = 0;// ushortid
+   neighbors_ushortid_vars.estimatedBandwidth[neighborIndex]         = 0;
+   neighbors_ushortid_vars.historyBandwidth[neighborIndex]           = 0;
 }
 
 //=========================== helpers =========================================
@@ -957,4 +966,145 @@ open_addr_t* neighbors_indexToAddress(uint8_t index) {
 
 bool neighbors_isMyNeighbor(open_addr_t* neighbor) {
     return isNeighbor(neighbor);
+}
+
+uint8_t neighbors_getEstimatedBandwidth(uint8_t index) {
+    if(index < MAXNUMNEIGHBORS) {
+        if(neighbors_vars.neighbors[index].used==TRUE) {
+            return neighbors_ushortid_vars.estimatedBandwidth[index];
+        } else return 0;
+    } else return 0;
+}
+
+uint8_t neighbors_getEstimatedBandwidthRealistic(uint8_t index) {
+    if(index < MAXNUMNEIGHBORS) {
+        if(neighbors_vars.neighbors[index].used==TRUE) {
+            if(neighbors_ushortid_vars.estimatedBandwidth[index] * 7 >= neighbors_ushortid_vars.historyBandwidth[index])
+                return neighbors_ushortid_vars.estimatedBandwidth[index];
+            else return (neighbors_ushortid_vars.historyBandwidth[index] + 6) / 7;
+        } else return 0;
+    } else return 0;
+}
+
+void neighbors_setEstimatedBandwidth(uint8_t index, uint8_t cells) {
+    if(index < MAXNUMNEIGHBORS) {
+        if(neighbors_vars.neighbors[index].used==TRUE) {
+            neighbors_ushortid_vars.estimatedBandwidth[index] = cells;
+        }
+    }
+}
+
+void neighbors_getStat(uint8_t index, uint8_t *tx, uint8_t *txAck) {
+    if(index < MAXNUMNEIGHBORS) {
+        if(neighbors_vars.neighbors[index].used==TRUE) {
+            *tx    = neighbors_vars.neighbors[index].numTx;
+            *txAck = neighbors_vars.neighbors[index].numTxACK;
+        }
+    }
+}
+
+void neighbors_notif_newSlot(void) {
+    uint8_t i;
+    for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
+        if(neighbors_vars.neighbors[i].used==TRUE) {
+            neighbors_ushortid_vars.historyBandwidth[i] += neighbors_ushortid_vars.estimatedBandwidth[i];
+            neighbors_ushortid_vars.historyBandwidth[i] -= (neighbors_ushortid_vars.historyBandwidth[i] + 7) >> 3;
+            neighbors_ushortid_vars.estimatedBandwidth[i] = 0;
+        }
+    }
+}
+
+static uint8_t _effectiveBandwidth(uint16_t actual, uint8_t tx, uint8_t txAck) {
+    if(tx == 0)
+    {
+        // Can not compute pdr
+        return (uint8_t)actual;
+    }
+    if((uint16_t)tx == (uint16_t)txAck)
+    {
+        // 100%
+        return (uint8_t)actual;
+    }
+    //if(tx * 0.9 >= txAck)
+    else if((uint16_t)tx * 9 >= (uint16_t)txAck * 10)
+    {
+        // 90% +
+        return (uint8_t)actual;
+    }
+    //if(tx * 0.75 >= txAck)
+    else if((uint16_t)tx * 3 >= (uint16_t)txAck * 4)
+    {
+        // 75% +
+        return (uint8_t)actual;
+    }
+    //if(tx * 0.5 >= txAck)
+    else if((uint16_t)tx >= (uint16_t)txAck * 2)
+    {
+        // 50% +
+        return (uint8_t)actual;
+    }
+    //if(tx * 0.333 >= txAck)
+    else if((uint16_t)tx >= (uint16_t)txAck * 3)
+    {
+        // 33% +
+        if(actual > 1)
+            return (uint8_t)actual - 1;
+        else return 0;
+    }
+    else 
+    {
+        if(actual > 1)
+            return (uint8_t)actual - 1;
+        else return 0;
+    }
+}
+
+uint8_t neighbors_getBandwidthRequest(uint16_t *actual, uint16_t *effective, uint16_t *estimated, uint16_t *lastused) {
+    uint8_t i;
+    uint8_t needBandwidthNeighboridx = MAXNUMNEIGHBORS;
+    uint16_t effectiveNeighborBandwidth, ret_effectiveNeighborBandwidth = 0;
+    uint16_t actualNeighborBandwidth, ret_actualNeighborBandwidth = 0;
+    uint16_t estimatedNeighborBandwidth, ret_estimatedNeighborBandwidth = 0;
+    uint16_t lastusedNeighborBandwidth, ret_lastusedNeighborBandwidth = 0;
+    uint16_t diff, maxDiff = 0;
+    uint8_t tx = 0, txAck = 0;
+
+    for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
+        if(neighbors_vars.neighbors[i].used==TRUE && neighbors_vars.neighbors[i].f6PNORES == FALSE) {
+            tx    = neighbors_vars.neighbors[i].numTx;
+            txAck = neighbors_vars.neighbors[i].numTxACK;
+            actualNeighborBandwidth = schedule_getNumOfSlotsByType(CELLTYPE_TX, &(neighbors_vars.neighbors[i].addr_64b));
+            estimatedNeighborBandwidth = neighbors_getEstimatedBandwidthRealistic(i);
+            lastusedNeighborBandwidth = neighbors_getEstimatedBandwidth(i);
+            
+            if(((uint16_t)txAck * 4 >= (uint16_t)tx * 1 || tx < 8) || neighbors_vars.neighbors[i].parentPreference != 0) {
+                if(estimatedNeighborBandwidth == 0)
+                    estimatedNeighborBandwidth = 1;
+                effectiveNeighborBandwidth = _effectiveBandwidth(actualNeighborBandwidth, tx, txAck);
+                if(estimatedNeighborBandwidth > effectiveNeighborBandwidth) {
+                    diff = estimatedNeighborBandwidth - effectiveNeighborBandwidth;
+                }
+                else {
+                    diff = effectiveNeighborBandwidth - estimatedNeighborBandwidth;
+                }
+
+                if(diff > maxDiff) {
+                    maxDiff = diff;
+                    needBandwidthNeighboridx = i;
+                    ret_actualNeighborBandwidth = actualNeighborBandwidth;
+                    ret_effectiveNeighborBandwidth = effectiveNeighborBandwidth;
+                    ret_estimatedNeighborBandwidth = estimatedNeighborBandwidth;
+                    ret_lastusedNeighborBandwidth = lastusedNeighborBandwidth;
+                }
+            }
+        }
+    }
+
+    *actual = ret_actualNeighborBandwidth;
+    *effective = ret_effectiveNeighborBandwidth;
+    *estimated = ret_estimatedNeighborBandwidth;
+    *lastused = ret_lastusedNeighborBandwidth;
+    //if(needBandwidthNeighboridx < MAXNUMNEIGHBORS && ret_estimatedNeighborBandwidth >= 3)
+    //    printf("%hhu to %hhu, estimated=%hu, actual=%hu, effective=%hu\n", idmanager_getMyID(ADDR_64B)->addr_64b[7], (neighbors_vars.neighbors[needBandwidthNeighboridx].addr_64b.addr_64b)[7], ret_estimatedNeighborBandwidth, ret_actualNeighborBandwidth, ret_effectiveNeighborBandwidth);
+    return needBandwidthNeighboridx;
 }

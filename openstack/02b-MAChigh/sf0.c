@@ -6,10 +6,12 @@
 #include "schedule.h"
 #include "idmanager.h"
 #include "openapps.h"
+#include "forwarding.h"
+#include "packetfunctions.h"
 
 //=========================== definition =====================================
 
-#define SF0THRESHOLD      2
+#define SF0THRESHOLD      1
 
 //=========================== variables =======================================
 
@@ -92,33 +94,74 @@ void sf0_removeCell_task(void) {
 }
 
 void sf0_bandwidthEstimate_task(void){
-    open_addr_t    neighbor;
-    bool           foundNeighbor;
-    int8_t         bw_outgoing;
-    int8_t         bw_incoming;
-    int8_t         bw_self;
+    open_addr_t    *neighbor;
+    //open_addr_t    anyaddr;
+    //bool           foundNeighbor;
+    //int8_t         bw_outgoing;
+    //int8_t         bw_incoming;
+    //int8_t         bw_self;
+    uint16_t estimatedNeighborBandwidth, actualNeighborBandwidth, effectiveNeighborBandwidth, diff, lastused;
+    uint8_t i, parent;
     
     // do not reserve cells if I'm a DAGroot
-    if (idmanager_getIsDAGroot()){
-        return;
-    }
+    //if (idmanager_getIsDAGroot()){
+    //    return;
+    //}
     
     if (sf0_vars.backoff>0){
         sf0_vars.backoff -= 1;
+        neighbors_notif_newSlot();
         return;
     }
+
+    if(icmpv6rpl_getPreferredParentIndex(&parent) == FALSE) parent = MAXNUMNEIGHBORS;
+    i = neighbors_getBandwidthRequest(&actualNeighborBandwidth, &effectiveNeighborBandwidth, &estimatedNeighborBandwidth, &lastused);
+    if(i < MAXNUMNEIGHBORS) {
+        neighbor = neighbors_indexToAddress(i);
+        if(estimatedNeighborBandwidth > effectiveNeighborBandwidth + SF0THRESHOLD || ((i == parent || idmanager_getIsDAGroot()) && estimatedNeighborBandwidth > effectiveNeighborBandwidth)) {
+            diff = estimatedNeighborBandwidth - effectiveNeighborBandwidth;
+            if(schedule_getNumberOfFreeEntries() >= diff) {
+                if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+                // one sixtop transcation is happening, only one instance at one time
+                    neighbors_notif_newSlot();
+                    return;
+                }
+                sixtop_request(
+                    IANA_6TOP_CMD_ADD,
+                    neighbor,
+                    diff
+                );
+            }
+        }
+        else if(estimatedNeighborBandwidth + SF0THRESHOLD < effectiveNeighborBandwidth && effectiveNeighborBandwidth > lastused) {
+            diff = effectiveNeighborBandwidth - estimatedNeighborBandwidth;
+            if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+                // one sixtop transcation is happening, only one instance at one time
+                neighbors_notif_newSlot();
+                return;
+            }
+            sixtop_request(
+                IANA_6TOP_CMD_DELETE,
+                neighbor,
+                diff
+            );
+        }
+    }
+
+    neighbors_notif_newSlot();
     
     // get preferred parent
-    foundNeighbor = icmpv6rpl_getPreferredParentEui64(&neighbor);
-    if (foundNeighbor==FALSE) {
-        return;
-    }
+    //foundNeighbor = icmpv6rpl_getPreferredParentEui64(&neighbor);
+    //if (foundNeighbor==FALSE) {
+    //    return;
+    //}
     
     // get bandwidth of outgoing, incoming and self.
     // Here we just calculate the estimated bandwidth for 
     // the application sending on dedicate cells(TX or Rx).
-    bw_outgoing = schedule_getNumOfSlotsByType(CELLTYPE_TX);
-    bw_incoming = schedule_getNumOfSlotsByType(CELLTYPE_RX);
+    //anyaddr.type = ADDR_ANYCAST;
+    //bw_outgoing = schedule_getNumOfSlotsByType(CELLTYPE_TX, &neighbor);
+    //bw_incoming = schedule_getNumOfSlotsByType(CELLTYPE_RX, &anyaddr);
     
     // get self required bandwith, you can design your
     // application and assign bw_self accordingly. 
@@ -126,22 +169,24 @@ void sf0_bandwidthEstimate_task(void){
     //    bw_self = application_getBandwdith(app_name);
     // By default, it's set to zero.
     // bw_self = openapps_getBandwidth(COMPONENT_UINJECT);
-    bw_self = sf0_vars.numAppPacketsPerSlotFrame;
+    //bw_self = sf0_vars.numAppPacketsPerSlotFrame;
     
     // In SF0, scheduledCells = bw_outgoing
     //         requiredCells  = bw_incoming + bw_self
     // when scheduledCells<requiredCells, add one or more cell
     
-    if (bw_outgoing <= bw_incoming+bw_self){
-        if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-            // one sixtop transcation is happening, only one instance at one time
-            return;
+    /*if (bw_outgoing <= bw_incoming+bw_self){
+        if(schedule_getNumberOfFreeEntries() > 0) {
+            if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+                // one sixtop transcation is happening, only one instance at one time
+                return;
+            }
+            sixtop_request(
+                IANA_6TOP_CMD_ADD,
+                &neighbor,
+                bw_incoming+bw_self-bw_outgoing + 1
+            );
         }
-        sixtop_request(
-            IANA_6TOP_CMD_ADD,
-            &neighbor,
-            bw_incoming+bw_self-bw_outgoing+1
-        );
     } else {
         // remove cell(s)
         if ( (bw_incoming+bw_self) < (bw_outgoing-SF0THRESHOLD)) {
@@ -150,39 +195,16 @@ void sf0_bandwidthEstimate_task(void){
                return;
             }
             sixtop_request(
-                IANA_6TOP_CMD_DELETE,
+                IANA_6TOP_CMD_CLEAR,
                 &neighbor,
-                SF0THRESHOLD
+                1
             );
         } else {
             // nothing to do
         }
-    }
+    }*/
 }
 
 void sf0_appPktPeriod(uint8_t numAppPacketsPerSlotFrame){
     sf0_vars.numAppPacketsPerSlotFrame = numAppPacketsPerSlotFrame;
-}
-
-void sf0_notifyBandwidthTooLow() {
-    sf0_vars.numAppPacketsPerSlotFrame += 1;
-}
-
-void sf0_notifyBandwidthTooHigh() {
-    if(sf0_vars.numAppPacketsPerSlotFrame > 0) {
-        sf0_vars.numAppPacketsPerSlotFrame -= 1;
-    }
-}
-
-void sf0_addCell_neighbor_task(open_addr_t *neighbor, uint8_t numCells) {
-   if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-      // one sixtop transcation is happening, only one instance at one time
-      return;
-   }
-   // call sixtop
-   sixtop_request(
-      IANA_6TOP_CMD_ADD,
-      neighbor,
-      numCells
-   );
 }

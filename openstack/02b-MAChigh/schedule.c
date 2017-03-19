@@ -277,6 +277,8 @@ owerror_t schedule_addActiveSlot(
    scheduleEntry_t* slotContainer;
    scheduleEntry_t* previousSlotWalker;
    scheduleEntry_t* nextSlotWalker;
+   uint8_t asn8[5];
+   asn_t asn;
    
    INTERRUPT_DECLARATION();
    DISABLE_INTERRUPTS();
@@ -307,6 +309,11 @@ owerror_t schedule_addActiveSlot(
    slotContainer->shared                    = shared;
    slotContainer->channelOffset             = channelOffset;
    memcpy(&slotContainer->neighbor,neighbor,sizeof(open_addr_t));
+   ieee154e_getAsn(asn8);
+   asn.bytes0and1 = asn8[0] + asn8[1] * 256;
+   asn.bytes2and3 = asn8[2] + asn8[3] * 256;
+   asn.byte4      = asn8[4];
+   slotContainer->lastUsedAsn = asn;
    
    // insert in circular list
    if (schedule_vars.currentScheduleEntry==NULL) {
@@ -516,7 +523,7 @@ scheduleEntry_t* schedule_getCurrentScheduleEntry(){
 }
 
 //=== from otf
-uint8_t schedule_getNumOfSlotsByType(cellType_t type){
+uint8_t schedule_getNumOfSlotsByType(cellType_t type, open_addr_t *neighborAddr){
    uint8_t returnVal;
    scheduleEntry_t* scheduleWalker;
    
@@ -527,7 +534,12 @@ uint8_t schedule_getNumOfSlotsByType(cellType_t type){
    scheduleWalker = schedule_vars.currentScheduleEntry;
    do {
       if(type == scheduleWalker->type){
-          returnVal += 1;
+          if(neighborAddr->type == ADDR_ANYCAST) {
+             returnVal += 1;
+          }
+          else if(packetfunctions_sameAddress(neighborAddr, &(scheduleWalker->neighbor))) {
+             returnVal += 1;
+          }
       }
       scheduleWalker = scheduleWalker->next;
    }while(scheduleWalker!=schedule_vars.currentScheduleEntry);
@@ -827,8 +839,6 @@ void schedule_indicateTx(asn_t* asnTimestamp, bool succesfullTx) {
 
 void schedule_housekeeping(){
     uint8_t     i;
-    open_addr_t neighbor;
-    
     
     INTERRUPT_DECLARATION();
     DISABLE_INTERRUPTS();
@@ -836,20 +846,43 @@ void schedule_housekeeping(){
     for(i=0;i<MAXACTIVESLOTS;i++) {
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX || schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
             if(neighbors_isMyNeighbor(&(schedule_vars.scheduleBuf[i].neighbor))==FALSE){
+                if (sixtop_setHandler(SIX_HANDLER_MAINTAIN)==FALSE){
+                    // one sixtop transcation is happening, only one instance at one time
+                    continue;
+                }
                 sixtop_request(IANA_6TOP_CMD_CLEAR,&(schedule_vars.scheduleBuf[i].neighbor),1);
+                break;
             }
         }
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX){
             // remove Tx cell if it's scheduled to non-preferred parent
-            if (icmpv6rpl_getPreferredParentEui64(&neighbor)==TRUE) {
-                if(packetfunctions_sameAddress(&neighbor,&(schedule_vars.scheduleBuf[i].neighbor))==FALSE&&ieee154e_asnDiff(&(schedule_vars.scheduleBuf[i].lastUsedAsn))>DESYNCTIMEOUT){
-                    if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-                       // one sixtop transcation is happening, only one instance at one time
-                       continue;
-                    }
-                    sixtop_request(IANA_6TOP_CMD_CLEAR,&(schedule_vars.scheduleBuf[i].neighbor),1);
-                    break;
+            //if (icmpv6rpl_getPreferredParentEui64(&neighbor)==TRUE) {
+            //    if(packetfunctions_sameAddress(&neighbor,&(schedule_vars.scheduleBuf[i].neighbor))==FALSE&&ieee154e_asnDiff(&(schedule_vars.scheduleBuf[i].lastUsedAsn))>(SLOTFRAME_LENGTH*3)){
+            //        if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+            //           // one sixtop transcation is happening, only one instance at one time
+            //           continue;
+            //        }
+            //        sixtop_request(IANA_6TOP_CMD_CLEAR,&(schedule_vars.scheduleBuf[i].neighbor),1);
+            //        break;
+            //    }
+            //}
+            if ((uint16_t)schedule_vars.scheduleBuf[i].numTxACK * 25 < (uint16_t)schedule_vars.scheduleBuf[i].numTx * 6 && (uint32_t)schedule_vars.scheduleBuf[i].numTx >= 8) {
+                if (sixtop_setHandler(SIX_HANDLER_MAINTAIN)==FALSE){
+                    // one sixtop transcation is happening, only one instance at one time
+                    continue;
                 }
+                sixtop_request(IANA_6TOP_CMD_CLEAR,&(schedule_vars.scheduleBuf[i].neighbor),1);
+                break;
+            }
+        }
+        if(schedule_vars.scheduleBuf[i].type == CELLTYPE_RX) {
+            if((uint32_t)ieee154e_asnDiff(&(schedule_vars.scheduleBuf[i].lastUsedAsn))>(SLOTFRAME_LENGTH << 8)) {
+                if (sixtop_setHandler(SIX_HANDLER_MAINTAIN)==FALSE){
+                    // one sixtop transcation is happening, only one instance at one time
+                    continue;
+                }
+                sixtop_request(IANA_6TOP_CMD_CLEAR,&(schedule_vars.scheduleBuf[i].neighbor),1);
+                break;
             }
         }
     }

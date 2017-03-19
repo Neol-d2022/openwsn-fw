@@ -17,7 +17,7 @@
 
 The superframe repears over time and can be arbitrarly long.
 */
-#define SLOTFRAME_LENGTH    25 //should be 101
+#define SLOTFRAME_LENGTH    49 //should be 101
 
 //draft-ietf-6tisch-minimal-06
 #define SCHEDULE_MINIMAL_6TISCH_ACTIVE_CELLS                      1
@@ -39,7 +39,7 @@ The superframe repears over time and can be arbitrarly long.
   for seiral port to tranmit data to dagroot. 
 */
 
-#define NUMSLOTSOFF          10
+#define NUMSLOTSOFF          22
 
 /**
 \brief Maximum number of active slots in a superframe.
@@ -183,7 +183,7 @@ void              schedule_removeAllCells(
    open_addr_t*   previousHop
 );
 scheduleEntry_t*  schedule_getCurrentScheduleEntry(void);
-uint8_t           schedule_getNumOfSlotsByType(cellType_t type);
+uint8_t           schedule_getNumOfSlotsByType(cellType_t type, open_addr_t *neighborAddr);
 uint8_t           schedule_getNumberOfFreeEntries();
 // from IEEE802154E
 void               schedule_syncSlotOffset(slotOffset_t targetSlotOffset);

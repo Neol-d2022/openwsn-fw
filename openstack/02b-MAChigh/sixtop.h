@@ -75,7 +75,7 @@ typedef enum {
 
 //=========================== typedef =========================================
 
-#define SIX2SIX_TIMEOUT_MS 4000
+#define SIX2SIX_TIMEOUT_MS ((TXRETRIES + 1) * SLOTFRAME_LENGTH * 100)
 
 //=========================== module variables ================================
 
@@ -93,6 +93,7 @@ typedef struct {
    six2six_state_t      six2six_state;
    uint8_t              commandID;
    six2six_handler_t    handler;
+   uint8_t              resSending;
    bool                 isResponseEnabled;
 } sixtop_vars_t;
 

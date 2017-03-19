@@ -26,6 +26,7 @@ typedef struct {
 
 typedef struct {
    OpenQueueEntry_t queue[QUEUELENGTH];
+   uint8_t jammedTimes;
 } openqueue_vars_t;
 
 //=========================== prototypes ======================================
@@ -45,7 +46,6 @@ OpenQueueEntry_t*  openqueue_sixtopGetReceivedPacket(void);
 // called by IEEE80215E
 OpenQueueEntry_t*  openqueue_macGetDataPacket(open_addr_t* toNeighbor);
 OpenQueueEntry_t*  openqueue_macGetEBPacket(void);
-
 /**
 \}
 \}

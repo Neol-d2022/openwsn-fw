@@ -5,6 +5,7 @@
 #include "iphc.h"
 #include "idmanager.h"
 #include "openqueue.h"
+#include "neighbors.h"
 
 //=========================== variables =======================================
 
@@ -18,6 +19,7 @@ void openbridge_triggerData() {
    uint8_t           input_buffer[136];//worst case: 8B of next hop + 128B of data
    OpenQueueEntry_t* pkt;
    uint8_t           numDataBytes;
+   uint8_t           index;
   
    numDataBytes = openserial_getInputBufferFilllevel();
   
@@ -60,6 +62,11 @@ void openbridge_triggerData() {
                             (errorparameter_t)0,
                             (errorparameter_t)0);
       }        
+
+      index = neighbors_addressToIndex(&(pkt->l2_nextORpreviousHop));
+      if(index < MAXNUMNEIGHBORS) {
+              neighbors_setEstimatedBandwidth(index, neighbors_getEstimatedBandwidth(index) + 1);
+      }
       //send
       if ((iphc_sendFromBridge(pkt))==E_FAIL) {
          openqueue_freePacketBuffer(pkt);
