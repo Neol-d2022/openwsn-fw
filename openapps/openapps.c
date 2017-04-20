@@ -45,7 +45,7 @@ void openapps_init(void) {
    techo_init();
    // UDP
 //   uecho_init();
-   //utyphoon_init();
+   utyphoon_init();
    //ublizzard_init();
    uhurricane_init();
    ushortid_init();

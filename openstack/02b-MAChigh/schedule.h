@@ -138,6 +138,7 @@ typedef struct {
    uint8_t          backoffExponent;
    uint8_t          backoff;
    uint8_t          debugPrintRow;
+   uint8_t          errorCounter[MAXACTIVESLOTS];
 } schedule_vars_t;
 
 //=========================== prototypes ======================================

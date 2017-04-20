@@ -277,6 +277,8 @@ owerror_t schedule_addActiveSlot(
    scheduleEntry_t* slotContainer;
    scheduleEntry_t* previousSlotWalker;
    scheduleEntry_t* nextSlotWalker;
+   uint8_t asn8[5];
+   asn_t asn;
    
    INTERRUPT_DECLARATION();
    DISABLE_INTERRUPTS();
@@ -307,6 +309,12 @@ owerror_t schedule_addActiveSlot(
    slotContainer->shared                    = shared;
    slotContainer->channelOffset             = channelOffset;
    memcpy(&slotContainer->neighbor,neighbor,sizeof(open_addr_t));
+   ieee154e_getAsn(asn8);
+   asn.bytes0and1 = asn8[0] + asn8[1] * 256;
+   asn.bytes2and3 = asn8[2] + asn8[3] * 256;
+   asn.byte4      = asn8[4];
+   slotContainer->lastUsedAsn = asn;
+   schedule_vars.errorCounter[((size_t)(slotContainer)-(size_t)(schedule_vars.scheduleBuf)) / sizeof(schedule_vars.scheduleBuf[0])] = 0;
    
    // insert in circular list
    if (schedule_vars.currentScheduleEntry==NULL) {
@@ -799,6 +807,10 @@ void schedule_indicateTx(asn_t* asnTimestamp, bool succesfullTx) {
    schedule_vars.currentScheduleEntry->numTx++;
    if (succesfullTx==TRUE) {
       schedule_vars.currentScheduleEntry->numTxACK++;
+      schedule_vars.errorCounter[((size_t)(schedule_vars.currentScheduleEntry)-(size_t)(schedule_vars.scheduleBuf)) / sizeof(schedule_vars.scheduleBuf[0])] = 0;
+   }
+   else {
+       schedule_vars.errorCounter[((size_t)(schedule_vars.currentScheduleEntry)-(size_t)(schedule_vars.scheduleBuf)) / sizeof(schedule_vars.scheduleBuf[0])] += 1;
    }
 
    // update last used timestamp
@@ -837,6 +849,7 @@ void schedule_housekeeping(){
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX || schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
             if(neighbors_isMyNeighbor(&(schedule_vars.scheduleBuf[i].neighbor))==FALSE){
                 sixtop_request(IANA_6TOP_CMD_CLEAR,&(schedule_vars.scheduleBuf[i].neighbor),1);
+                break;
             }
         }
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX){
@@ -850,6 +863,21 @@ void schedule_housekeeping(){
                     sixtop_request(IANA_6TOP_CMD_CLEAR,&(schedule_vars.scheduleBuf[i].neighbor),1);
                     break;
                 }
+            }
+        }
+        if(schedule_vars.scheduleBuf[i].type == CELLTYPE_RX) {
+            if((uint32_t)ieee154e_asnDiff(&(schedule_vars.scheduleBuf[i].lastUsedAsn))>(SLOTFRAME_LENGTH << 8)) {
+                if (sixtop_setHandler(SIX_HANDLER_MAINTAIN)==FALSE){
+                    // one sixtop transcation is happening, only one instance at one time
+                    continue;
+                }
+                sixtop_request(IANA_6TOP_CMD_CLEAR,&(schedule_vars.scheduleBuf[i].neighbor),1);
+                break;
+            }
+        }
+        if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX) {
+            if(schedule_vars.errorCounter[i] >= 16) {
+                schedule_removeActiveSlot(schedule_vars.scheduleBuf[i].slotOffset, &(schedule_vars.scheduleBuf[i].neighbor));
             }
         }
     }
