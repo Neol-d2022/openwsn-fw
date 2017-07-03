@@ -467,6 +467,123 @@ void neighbors_set_ushortid(uint8_t neighborIndex, uint16_t _ushortid) {
     }
 }
 
+// uhurricane
+
+void neighbors_get3parents(uint8_t* ptr, uint8_t* numOut) {
+    uint8_t   i,j,k=MAXNUMNEIGHBORS;
+    uint8_t   numNeighbors;
+
+    numNeighbors = 0;
+retry:
+    for (i = j = addrParents_vars.lastReportIndex; i<k; i++) {
+        if (neighbors_vars.neighbors[i].used==TRUE&&neighbors_shortid_vars.neighborsId[i]!=0){
+            ptr[0] = (neighbors_shortid_vars.neighborsId[i] & 0xFF00) >> 8;
+            ptr[1] = (neighbors_shortid_vars.neighborsId[i] & 0x00FF) >> 0;
+            ptr += sizeof(neighbors_shortid_vars.neighborsId[i]);
+            memcpy( ptr,&(neighbors_vars.neighbors[i].DAGrank),sizeof(dagrank_t));
+            ptr += sizeof(dagrank_t);
+            memcpy( ptr,&(neighbors_vars.neighbors[i].numTx),sizeof(uint8_t));
+            ptr += sizeof(uint8_t);
+            memcpy( ptr,&(neighbors_vars.neighbors[i].numTxACK),sizeof(uint8_t));
+            ptr += sizeof(uint8_t);
+
+            numNeighbors++;
+            if(numNeighbors>=6)
+                break;
+        }
+    }
+    
+    if(i>=MAXNUMNEIGHBORS) {
+        // (neold2022): Walked through the neighbor table.
+        if(numNeighbors==6) {
+            // (neold2022): We've found exactly 6 neighbors.
+            addrParents_vars.lastReportIndex = 0;
+            // (neold2022): Search start from index 0 next time.
+        }
+        else {
+            // (neold2022): Neighbor No. < 6 this time,
+            //              check if we are able to introduce new ones.
+            if(j==0) {
+                // (neold2022): last report index is 0, we have active neighbor no. < 6,
+                //              not able to report more.
+                addrParents_vars.lastReportIndex = 0;
+                // (neold2022): Search start from index 0 next time.
+            }
+            else {
+                // (neold2022): Active neighbor no. may >= 6,
+                k = j;
+                // (neold2022): Update upper index,
+                //              so no duplicated neighbors reported in this time
+                addrParents_vars.lastReportIndex = 0;
+                goto retry;
+                // (neold2022): Force re-search from index 0
+            }
+        }
+    }
+    else if(addrParents_vars.lastReportIndex + 1 >= MAXNUMNEIGHBORS) addrParents_vars.lastReportIndex = 0;
+    else addrParents_vars.lastReportIndex = i + 1;
+    *numOut = numNeighbors;
+}
+
+void neighbors_set2parents(uint8_t* ptr, uint8_t num) {
+    uint8_t i;
+
+    addrParents_vars.indexPrimary = MAXNUMNEIGHBORS;
+    addrParents_vars.indexBackup  = MAXNUMNEIGHBORS;
+    
+    icmpv6rpl_notify_primaryGone();
+    icmpv6rpl_notify_backupGone();
+    
+    if(num==2) {
+        memcpy(&addrParents_vars.addrPrimary.addr_64b, ptr  , LENGTH_ADDR64b);
+        memcpy(&addrParents_vars.addrBackup.addr_64b , ptr+8, LENGTH_ADDR64b);
+        addrParents_vars.usedPrimary = TRUE;
+        addrParents_vars.usedBackup  = TRUE;
+    }
+    else if(num==1) {
+        memcpy(&addrParents_vars.addrPrimary.addr_64b, ptr, LENGTH_ADDR64b);
+        memset(&addrParents_vars.addrBackup.addr_64b , 0, LENGTH_ADDR64b);
+        addrParents_vars.usedPrimary = TRUE;
+        addrParents_vars.usedBackup  = FALSE;
+    }
+    else {
+        memset(&addrParents_vars.addrPrimary.addr_64b, 0, LENGTH_ADDR64b);
+        memset(&addrParents_vars.addrBackup.addr_64b , 0, LENGTH_ADDR64b);
+        addrParents_vars.usedPrimary = FALSE;
+        addrParents_vars.usedBackup  = FALSE;
+    }
+
+    //EDIT(HCC): Update neighbor indexes
+    for(i=0;i<MAXNUMNEIGHBORS;i+=1) {
+        if(neighbors_vars.neighbors[i].used) {
+            if(packetfunctions_sameAddress(
+                &addrParents_vars.addrPrimary,
+                &neighbors_vars.neighbors[i].addr_64b)
+            ) {
+                addrParents_vars.indexPrimary = i;
+                icmpv6rpl_notify_primaryAssigned(addrParents_vars.indexPrimary);
+            }
+            if(packetfunctions_sameAddress(
+                &addrParents_vars.addrBackup,
+                &neighbors_vars.neighbors[i].addr_64b)
+            ) {
+                addrParents_vars.indexBackup = i;
+                icmpv6rpl_notify_backupAssigned(addrParents_vars.indexBackup);
+            }
+        }
+    }
+}
+
+
+void neighbors_getStat(uint8_t index, uint8_t *tx, uint8_t *txAck) {
+    if(index < MAXNUMNEIGHBORS) {
+        if(neighbors_vars.neighbors[index].used==TRUE) {
+            *tx    = neighbors_vars.neighbors[index].numTx;
+            *txAck = neighbors_vars.neighbors[index].numTxACK;
+        }
+    }
+}
+
 //===== managing routing info
 
 /**

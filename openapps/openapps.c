@@ -23,6 +23,7 @@
 #include "uexpiration.h"
 #include "uexpiration_monitor.h"
 #include "ushortid.h"
+#include "uhurricane.h"
 
 //=========================== variables =======================================
 
@@ -50,4 +51,5 @@ void openapps_init(void) {
    uexpiration_init();
    umonitor_init();
    ushortid_init();
+   uhurricane_init();
 }

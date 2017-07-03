@@ -159,6 +159,8 @@ typedef struct {
    uint16_t                  rankIncrease;            ///< the cost of the link to the parent, in units of rank
    bool                      haveParent;              ///< this router has a route to DAG root
    uint8_t                   ParentIndex;             ///< index of Parent in neighbor table (iff haveParent==TRUE)
+   uint8_t                   ParentIndexPrimary;      ///< GA
+   uint8_t                   ParentIndexBackup;       ///< GA
    // actually only here for debug
    icmpv6rpl_dio_ht*         incomingDio;             //keep it global to be able to debug correctly.
 } icmpv6rpl_vars_t;
@@ -181,7 +183,10 @@ void     icmpv6rpl_setMyDAGrank(dagrank_t rank);                         // new 
 void     icmpv6rpl_killPreferredParent(void);                            // new DB
 void     icmpv6rpl_updateMyDAGrankAndParentSelection(void);              // new DB
 void     icmpv6rpl_indicateRxDIO(OpenQueueEntry_t* msg);                 // new DB
-
+void     icmpv6rpl_notify_primaryGone(void);                             // uhurricane
+void     icmpv6rpl_notify_backupGone(void);                              // uhurricane
+void     icmpv6rpl_notify_primaryAssigned(uint8_t index);                // uhurricane
+void     icmpv6rpl_notify_backupAssigned(uint8_t index);                 // uhurricane
 
 /**
 \}

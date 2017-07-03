@@ -39,6 +39,7 @@
 #include "rrt_obj.h"
 #include "uecho_obj.h"
 #include "ushortid_obj.h"
+#include "uhurricane_obj.h"
 
 //=========================== prototypes ======================================
 
@@ -230,6 +231,8 @@ struct OpenMote {
    rrt_vars_t           rrt_vars;
    //tohlone_vars_t       tohlone_vars;
    ushortid_vars_t      ushortid_vars;
+   uhurricane_vars_t    uhurricane_vars;
+   addrParents_vars_t   addrParents_vars;
 };
 
 #endif

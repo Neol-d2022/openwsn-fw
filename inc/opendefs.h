@@ -96,6 +96,7 @@ enum {
    WKP_UDP_INJECT                      =   61617,// 0xf0b1
    WKP_UDP_RINGMASTER                  =   15000,
    WKP_UDP_SERIALBRIDGE                =    2001,
+   WKP_UDP_HURRICANE                   =   15003,
    WKP_UDP_SHORTID                     =   15004,
 };
 
@@ -176,6 +177,7 @@ enum {
    COMPONENT_UEXPIRATION               = 0x29,
    COMPONENT_UMONITOR                  = 0x2a,
    COMPONENT_USHORTID                  = 0xa0,
+   COMPONENT_UHURRICANE                = 0xa1,
 };
 
 /**

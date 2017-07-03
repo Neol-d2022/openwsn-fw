@@ -54,6 +54,16 @@ typedef struct {
    uint16_t             neighborsId[MAXNUMNEIGHBORS];
 } neighbors_shortid_vars_t;
 
+typedef struct {
+   open_addr_t        addrPrimary;
+   open_addr_t        addrBackup;
+   uint8_t            indexPrimary;
+   uint8_t            indexBackup;
+   uint8_t            lastReportIndex;
+   bool               usedPrimary;
+   bool               usedBackup;
+} addrParents_vars_t;
+
 //=========================== prototypes ======================================
 
 void          neighbors_init(void);
@@ -73,6 +83,10 @@ void          neighbors_setNeighborRank(uint8_t index, dagrank_t rank);
 void          neighbors_setNeighborNoResource(open_addr_t* address);
 void          neighbors_setPreferredParent(uint8_t index, bool isPreferred);
 void          neighbors_set_ushortid(uint8_t neighborIndex, uint16_t _ushortid);
+// uhurricane
+void          neighbors_get3parents(uint8_t* ptr, uint8_t* numOut);
+void          neighbors_set2parents(uint8_t* ptr, uint8_t num);
+void          neighbors_getStat(uint8_t index, uint8_t *tx, uint8_t *txAck);
 // interrogators
 bool          neighbors_isStableNeighbor(open_addr_t* address);
 bool          neighbors_isStableNeighborByIndex(uint8_t index);

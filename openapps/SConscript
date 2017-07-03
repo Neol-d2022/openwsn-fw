@@ -22,6 +22,7 @@ if localEnv['board']=='python':
         'cexample',
         'cstorm',
         'ushortid',
+        'uhurricane',
     ]
 
 # additional apps the user wants to build
