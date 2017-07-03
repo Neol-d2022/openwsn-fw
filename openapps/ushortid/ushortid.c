@@ -28,7 +28,8 @@
 
 //=========================== variables =======================================
 
-ushortid_vars_t ushortid_vars;
+ushortid_vars_t    ushortid_vars;
+addrParents_vars_t addrParents_vars;
 
 //=========================== prototypes ======================================
 
@@ -37,6 +38,10 @@ ushortid_vars_t ushortid_vars;
 void ushortid_init() {
    memset(&ushortid_vars,0,sizeof(ushortid_vars));
    ushortid_vars.timerId_ushortid = opentimers_create();
+   if(uhurricane_vars.timerId_uhurricane == TOO_MANY_TIMERS_ERROR) {
+   	printf("[ERROR] %hu Cannot initialize ushort module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+   	return;
+   }
    opentimers_scheduleIn(ushortid_vars.timerId_ushortid, USHORTIDPERIOD, TIME_MS, TIMER_PERIODIC, ushortid_timer_cb);
    ushortid_vars.backoff = (openrandom_get16b() & 0x0F) + 0x10; // ~2mins
    
@@ -83,7 +88,7 @@ void ushortid_receive(OpenQueueEntry_t* request) {
             ushortid_vars.waitingRes = FALSE;
         }
     }
-	openqueue_freePacketBuffer(request);
+    openqueue_freePacketBuffer(request);
 }
 
 //timer fired, but we don't want to execute task in ISR mode
@@ -164,6 +169,12 @@ void ushortid_task_cb() {
       }
    }
    
+   ushortid_vars.timerId_ushortid_timeout = opentimers_create();
+   if(ushortid_vars.timerId_ushortid_timeout == TOO_MANY_TIMERS_ERROR) {
+   	printf("[ERROR] %hu Cannot send ushort request: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+   	return;
+   }
+   
    // Try to make a request
    ushortid_vars.busySendingData = TRUE;
 
@@ -176,6 +187,7 @@ void ushortid_task_cb() {
          (errorparameter_t)0
       );
       ushortid_vars.busySendingData = FALSE;
+      opentimers_destroy(ushortid_vars.timerId_ushortid_timeout);
       return;
    }
    // take ownership over that packet
@@ -197,22 +209,23 @@ void ushortid_task_cb() {
    // send
    ushortid_vars.askingSelf = askingSelf;
    memcpy(ushortid_vars.desireAddr,add64->addr_64b,sizeof(ushortid_vars.desireAddr));
-   printf("[INFO] %hhu asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
    if ((openudp_send(pkt))==E_FAIL) {
       openqueue_freePacketBuffer(pkt);
       ushortid_vars.askingSelf = FALSE;
       memset(ushortid_vars.desireAddr,0,sizeof(ushortid_vars.desireAddr));
       ushortid_vars.backoff = (openrandom_get16b() & 0x07) + 0x08; // ~1min
       ushortid_vars.busySendingData = FALSE;
+      opentimers_destroy(ushortid_vars.timerId_ushortid_timeout);
+      return;
    }
 
+   printf("[INFO] %hhu asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
    return;
 }
 
 void ushortid_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
    ushortid_vars.waitingRes = TRUE;
    ushortid_vars.busySendingData = FALSE;
-   ushortid_vars.timerId_ushortid_timeout = opentimers_create();
    opentimers_scheduleIn(ushortid_vars.timerId_ushortid_timeout, USHORTIDTIMEOUT, TIME_MS, TIMER_ONESHOT, ushortid_timeout_timer_cb);
    openqueue_freePacketBuffer(msg);
 }
