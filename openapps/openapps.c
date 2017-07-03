@@ -22,6 +22,7 @@
 #include "userialbridge.h"
 #include "uexpiration.h"
 #include "uexpiration_monitor.h"
+#include "ushortid.h"
 
 //=========================== variables =======================================
 
@@ -48,4 +49,5 @@ void openapps_init(void) {
    userialbridge_init();
    uexpiration_init();
    umonitor_init();
+   ushortid_init();
 }

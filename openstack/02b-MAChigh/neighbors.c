@@ -9,6 +9,7 @@
 //=========================== variables =======================================
 
 static neighbors_vars_t neighbors_vars;
+static neighbors_shortid_vars_t neighbors_shortid_vars;
 
 //=========================== prototypes ======================================
 
@@ -35,6 +36,7 @@ void neighbors_init() {
    
    // clear module variables
    memset(&neighbors_vars,0,sizeof(neighbors_vars_t));
+   memset(&neighbors_shortid_vars,0,sizeof(neighbors_shortid_vars_t));
    // The .used fields get reset to FALSE by this memset.
    
 }
@@ -61,6 +63,37 @@ uint8_t neighbors_getNumNeighbors() {
 
 dagrank_t neighbors_getNeighborRank(uint8_t index) {
    return neighbors_vars.neighbors[index].DAGrank;
+}
+
+/**
+\brief Retrieve the index of neighbor.
+
+\returns The index of neighbor.
+*/
+uint8_t neighbors_addressToIndex(open_addr_t* neighbor) {
+   uint8_t i;
+   for (i=0;i<MAXNUMNEIGHBORS;i++) {
+      if (isThisRowMatching(neighbor,i)) {
+         break;
+      }
+   }
+   return i;
+}
+
+/**
+\brief Retrieve next index of neighbor whose short id is not known.
+
+\returns The index of neighbor whose short id is not known, or MAXNUMNEIGHBORS if all neighbors' id are known / there are no neighbors.
+*/
+uint8_t neighbors_nextNull_ushortid(void) {
+    uint8_t i;
+    for(i=0;i<MAXNUMNEIGHBORS;i+=1) {
+        if(neighbors_vars.neighbors[i].used==TRUE) {
+            if(neighbors_shortid_vars.neighborsId[i] == 0)
+              break;
+        }
+    }
+    return i;
 }
 
 /**
@@ -428,6 +461,12 @@ void neighbors_setPreferredParent(uint8_t index, bool isPreferred){
     neighbors_vars.neighbors[index].parentPreference = isPreferred;
 }
 
+void neighbors_set_ushortid(uint8_t neighborIndex, uint16_t _ushortid) {
+    if(neighbors_vars.neighbors[neighborIndex].used==TRUE) {
+        neighbors_shortid_vars.neighborsId[neighborIndex] = _ushortid;
+    }
+}
+
 //===== managing routing info
 
 /**
@@ -622,6 +661,7 @@ void registerNewNeighbor(open_addr_t* address,
             neighbors_vars.neighbors[i].numRx                  = 1;
             neighbors_vars.neighbors[i].numTx                  = 0;
             neighbors_vars.neighbors[i].numTxACK               = 0;
+	    neighbors_shortid_vars.neighborsId[i]              = 0;
             memcpy(&neighbors_vars.neighbors[i].asn,asnTimestamp,sizeof(asn_t));
             //update jp
             if (joinPrioPresent==TRUE){

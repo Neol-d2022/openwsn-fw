@@ -38,6 +38,7 @@
 #include "cwellknown_obj.h"
 #include "rrt_obj.h"
 #include "uecho_obj.h"
+#include "ushortid_obj.h"
 
 //=========================== prototypes ======================================
 
@@ -200,6 +201,7 @@ struct OpenMote {
    // l2b
    sixtop_vars_t        sixtop_vars;
    neighbors_vars_t     neighbors_vars;
+   neighbors_shortid_vars_t neighbors_shortid_vars;
    schedule_vars_t      schedule_vars;
    sf0_vars_t           sf0_vars;
    // l2a
@@ -227,6 +229,7 @@ struct OpenMote {
    cwellknown_vars_t    cwellknown_vars;
    rrt_vars_t           rrt_vars;
    //tohlone_vars_t       tohlone_vars;
+   ushortid_vars_t      ushortid_vars;
 };
 
 #endif

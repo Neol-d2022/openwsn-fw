@@ -50,6 +50,10 @@ typedef struct {
    uint8_t              debugRow;
 } neighbors_vars_t;
 
+typedef struct {
+   uint16_t             neighborsId[MAXNUMNEIGHBORS];
+} neighbors_shortid_vars_t;
+
 //=========================== prototypes ======================================
 
 void          neighbors_init(void);
@@ -57,6 +61,8 @@ void          neighbors_init(void);
 // getters
 dagrank_t     neighbors_getNeighborRank(uint8_t index);
 uint8_t       neighbors_getNumNeighbors(void);
+uint8_t       neighbors_addressToIndex(open_addr_t* neighbor);
+uint8_t       neighbors_nextNull_ushortid(void);
 uint16_t      neighbors_getLinkMetric(uint8_t index);
 open_addr_t*  neighbors_getKANeighbor(uint16_t kaPeriod);
 bool          neighbors_getNeighborNoResource(uint8_t index);
@@ -66,6 +72,7 @@ uint8_t       neighbors_getSequenceNumber(open_addr_t* address);
 void          neighbors_setNeighborRank(uint8_t index, dagrank_t rank);
 void          neighbors_setNeighborNoResource(open_addr_t* address);
 void          neighbors_setPreferredParent(uint8_t index, bool isPreferred);
+void          neighbors_set_ushortid(uint8_t neighborIndex, uint16_t _ushortid);
 // interrogators
 bool          neighbors_isStableNeighbor(open_addr_t* address);
 bool          neighbors_isStableNeighborByIndex(uint8_t index);
