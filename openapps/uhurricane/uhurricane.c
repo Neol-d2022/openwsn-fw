@@ -84,7 +84,8 @@ void uhurricane_timeout_reset_cb() {
 void uhurricane_timeout_cb(opentimers_id_t id){
    uhurricane_vars.timerId_uhurricane_timeout = TOO_MANY_TIMERS_ERROR;
    opentimers_destroy(id);
-   scheduler_push_task(uhurricane_timeout_reset_cb,TASKPRIO_COAP);
+   //scheduler_push_task(uhurricane_timeout_reset_cb,TASKPRIO_COAP);
+   uhurricane_timeout_reset_cb();
 }
 
 void uhurricane_task_cb() {

@@ -473,6 +473,7 @@ owerror_t forwarding_send_internal_RoutingTable(
       );
       return E_FAIL;
    }
+   neighbors_notifyBandwidthUsed(&(msg->l2_nextORpreviousHop));
    
    if (ipv6_outer_header->src.type != ADDR_NONE){
       packetfunctions_tossHeader(msg,ipv6_outer_header->header_length);
@@ -805,6 +806,7 @@ owerror_t forwarding_send_internal_SourceRouting(
     } else {
         RH3_length = 0;
     }
+    neighbors_notifyBandwidthUsed(&(msg->l2_nextORpreviousHop));
     
     // send to next lower layer
     return iphc_sendFromForwarding(

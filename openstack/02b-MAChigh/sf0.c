@@ -20,6 +20,7 @@ sf0_vars_t sf0_vars;
 //=========================== prototypes ======================================
 
 void sf0_bandwidthEstimate_task(void);
+void sf0_bandwidthEstimate_2_task(void);
 // sixtop callback 
 uint16_t sf0_getMetadata(void);
 metadata_t sf0_translateMetadata(void);
@@ -35,7 +36,7 @@ void sf0_init(void) {
 
 // this function is called once per slotframe. 
 void sf0_notifyNewSlotframe(void) {
-   scheduler_push_task(sf0_bandwidthEstimate_task,TASKPRIO_SF0);
+   scheduler_push_task(sf0_bandwidthEstimate_2_task,TASKPRIO_SF0);
 }
 
 void sf0_setBackoff(uint8_t value){
@@ -133,13 +134,14 @@ void sf0_bandwidthEstimate_task(void){
             // failed to get cell list to add
             return;
         }
+        memset(celllist_delete,0,sizeof(celllist_delete));
         sixtop_request(
             IANA_6TOP_CMD_ADD,                  // code
             &neighbor,                          // neighbor
             bw_incoming+bw_self-bw_outgoing+1,  // number cells
             LINKOPTIONS_TX,                     // cellOptions
             celllist_add,                       // celllist to add
-            NULL,                               // celllist to delete (not used)
+            celllist_delete,                    // celllist to delete
             SF0_ID,                             // sfid
             0,                                  // list command offset (not used)
             0                                   // list command maximum celllist (not used)
@@ -155,12 +157,104 @@ void sf0_bandwidthEstimate_task(void){
                 // failed to get cell list to delete
                 return;
             }
+            memset(celllist_add,0,sizeof(celllist_add));
             sixtop_request(
                 IANA_6TOP_CMD_DELETE,   // code
                 &neighbor,              // neighbor
                 SF0THRESHOLD,           // number cells
                 LINKOPTIONS_TX,         // cellOptions
-                NULL,                   // celllist to add (not used)
+                celllist_add,                   // celllist to add
+                celllist_delete,        // celllist to delete
+                SF0_ID,                 // sfid
+                0,                      // list command offset (not used)
+                0                       // list command maximum celllist (not used)
+            );
+        } else {
+            // nothing to do
+        }
+    }
+}
+
+void sf0_bandwidthEstimate_2_task(void){
+    open_addr_t    neighbor;
+    bool           foundNeighbor;
+    int8_t         bw_actual, _actual;
+    int8_t         bw_estimated, _estimated;
+    int8_t         maxDiff, _diff;
+    uint8_t        i, parent_i;
+    cellInfo_ht    celllist_add[CELLLIST_MAX_LEN];
+    cellInfo_ht    celllist_delete[CELLLIST_MAX_LEN];
+    
+    if (sf0_vars.backoff>0){
+        sf0_vars.backoff -= 1;
+        return;
+    }
+    
+    foundNeighbor = icmpv6rpl_getPreferredParentEui64(&neighbor);
+    if (foundNeighbor==FALSE)
+        return;
+    
+    i = neighbors_addressToIndex(&neighbor);
+    bw_actual = schedule_getNumOfSlotsByTypeAndIndex(CELLTYPE_TX, i);
+    bw_estimated = neighbors_estimatedBandwidth(i);
+    parent_i = i;
+    if(bw_actual > bw_estimated && bw_estimated >= (bw_actual-SF0THRESHOLD)) {
+       maxDiff = -1;
+       for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
+          if(parent_i == i) continue;
+          _estimated = neighbors_estimatedBandwidth(i);
+          if(_estimated == 255) continue;
+          _actual = schedule_getNumOfSlotsByTypeAndIndex(CELLTYPE_TX, i);
+          _diff = _actual - _estimated;
+          if(_diff < 0) _diff *= -1;
+          if(_diff > maxDiff) {
+             bw_actual = _actual;
+             bw_estimated = _estimated;
+             neighbors_getNeighborEui64(&neighbor, ADDR_64B, i);
+             maxDiff = _diff;
+          }
+       }
+    }
+    
+    
+    if (bw_actual <= bw_estimated){
+        if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+            // one sixtop transcation is happening, only one instance at one time
+            return;
+        }
+        if (sf0_candidateAddCellList(celllist_add,bw_estimated-bw_actual+1)==FALSE){
+            // failed to get cell list to add
+            return;
+        }
+        sixtop_request(
+            IANA_6TOP_CMD_ADD,                  // code
+            &neighbor,                          // neighbor
+            bw_estimated-bw_actual+1,   // number cells
+            LINKOPTIONS_TX,                     // cellOptions
+            celllist_add,                       // celllist to add
+            NULL,                               // celllist to delete
+            SF0_ID,                             // sfid
+            0,                                  // list command offset (not used)
+            0                                   // list command maximum celllist (not used)
+        );
+    } else {
+        // remove cell(s)
+        if ( bw_estimated < (bw_actual-SF0THRESHOLD)) {
+            if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+               // one sixtop transcation is happening, only one instance at one time
+               return;
+            }
+            if (sf0_candidateRemoveCellList(celllist_delete,&neighbor,SF0THRESHOLD)==FALSE){
+                // failed to get cell list to delete
+                return;
+            }
+            memset(celllist_add,0,sizeof(celllist_add));
+            sixtop_request(
+                IANA_6TOP_CMD_DELETE,   // code
+                &neighbor,              // neighbor
+                SF0THRESHOLD,           // number cells
+                LINKOPTIONS_TX,         // cellOptions
+                NULL,                   // celllist to add
                 celllist_delete,        // celllist to delete
                 SF0_ID,                 // sfid
                 0,                      // list command offset (not used)

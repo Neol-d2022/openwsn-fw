@@ -10,6 +10,7 @@
 
 static neighbors_vars_t neighbors_vars;
 static neighbors_shortid_vars_t neighbors_shortid_vars;
+static neighbor_bw_vars_t neighbor_bw_vars;
 
 //=========================== prototypes ======================================
 
@@ -37,6 +38,7 @@ void neighbors_init() {
    // clear module variables
    memset(&neighbors_vars,0,sizeof(neighbors_vars_t));
    memset(&neighbors_shortid_vars,0,sizeof(neighbors_shortid_vars_t));
+   memset(&neighbor_bw_vars,0,sizeof(neighbor_bw_vars_t));
    // The .used fields get reset to FALSE by this memset.
    
 }
@@ -537,18 +539,24 @@ void neighbors_set2parents(uint8_t* ptr, uint8_t num) {
     if(num==2) {
         memcpy(&addrParents_vars.addrPrimary.addr_64b, ptr  , LENGTH_ADDR64b);
         memcpy(&addrParents_vars.addrBackup.addr_64b , ptr+8, LENGTH_ADDR64b);
+        addrParents_vars.addrPrimary.type = ADDR_64B;
+        addrParents_vars.addrBackup.type = ADDR_64B;
         addrParents_vars.usedPrimary = TRUE;
         addrParents_vars.usedBackup  = TRUE;
     }
     else if(num==1) {
         memcpy(&addrParents_vars.addrPrimary.addr_64b, ptr, LENGTH_ADDR64b);
         memset(&addrParents_vars.addrBackup.addr_64b , 0, LENGTH_ADDR64b);
+        addrParents_vars.addrPrimary.type = ADDR_64B;
+        addrParents_vars.addrBackup.type = ADDR_NONE;
         addrParents_vars.usedPrimary = TRUE;
         addrParents_vars.usedBackup  = FALSE;
     }
     else {
         memset(&addrParents_vars.addrPrimary.addr_64b, 0, LENGTH_ADDR64b);
         memset(&addrParents_vars.addrBackup.addr_64b , 0, LENGTH_ADDR64b);
+        addrParents_vars.addrPrimary.type = ADDR_NONE;
+        addrParents_vars.addrBackup.type = ADDR_NONE;
         addrParents_vars.usedPrimary = FALSE;
         addrParents_vars.usedBackup  = FALSE;
     }
@@ -779,6 +787,8 @@ void registerNewNeighbor(open_addr_t* address,
             neighbors_vars.neighbors[i].numTx                  = 0;
             neighbors_vars.neighbors[i].numTxACK               = 0;
 	    neighbors_shortid_vars.neighborsId[i]              = 0;
+	    neighbor_bw_vars.bw_used[i]                        = 0;
+	    neighbor_bw_vars.sf_passed[i]                      = 0;
             memcpy(&neighbors_vars.neighbors[i].asn,asnTimestamp,sizeof(asn_t));
             //update jp
             if (joinPrioPresent==TRUE){
@@ -840,4 +850,55 @@ bool isThisRowMatching(open_addr_t* address, uint8_t rowNumber) {
                                (errorparameter_t)3);
          return FALSE;
    }
+}
+
+// from otf
+void neighbors_notifyNewSlotframe(void) {
+   /*uint8_t i;
+   
+   for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
+      if(neighbors_vars.neighbors[i].used==1) {
+         if(neighbor_bw_vars.bw_used[i] >= 0x7FFF || neighbor_bw_vars.sf_passed[i] >= 0x7FFF) {
+            neighbor_bw_vars.bw_used[i] >>= 1;
+            neighbor_bw_vars.sf_passed[i] >>= 1;
+         }
+      }
+   }*/
+}
+
+void neighbors_notifyBandwidthUsed(open_addr_t* address) {
+   uint8_t i;
+   
+   i = neighbors_addressToIndex(address);
+   if(i < MAXNUMNEIGHBORS) {
+      neighbor_bw_vars.bw_used[i] += 1;
+      if(neighbor_bw_vars.bw_used[i] >= 0x7FFF || neighbor_bw_vars.sf_passed[i] >= 0x7FFF) {
+         neighbor_bw_vars.bw_used[i] >>= 1;
+         neighbor_bw_vars.sf_passed[i] >>= 1;
+      }
+   }
+}
+
+uint8_t neighbors_estimatedBandwidth(uint8_t index) {
+   double r;
+   uint8_t i = index, tx, txAck;
+   
+   if(i < MAXNUMNEIGHBORS) {
+      if(neighbors_vars.neighbors[i].used) {
+         neighbors_getStat(i, &tx, &txAck);
+         if((unsigned int)neighbor_bw_vars.sf_passed[i] * txAck == 0) return 0;
+         else {
+            r = (double)tx / txAck;
+            r = sqrt(r);
+            if(r > 2.0) {
+                if(neighbors_vars.neighbors[i].parentPreference == 0)
+                    return 0;
+                else return 1;
+            }
+            return (uint8_t)ceil((((unsigned int)neighbor_bw_vars.bw_used[i] * r)) / ((unsigned int)neighbor_bw_vars.sf_passed[i]));
+         }
+      }
+   }
+   
+   return 255;
 }

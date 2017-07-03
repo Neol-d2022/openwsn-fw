@@ -103,6 +103,7 @@ typedef struct {
    uint16_t                     periodMaintenance;
    bool                         busySendingKA;           // TRUE when busy sending a keep-alive
    bool                         busySendingEB;           // TRUE when busy sending an enhanced beacon
+   bool                         busySending6top;
    uint8_t                      dsn;                     // current data sequence number
    uint8_t                      mgtTaskCounter;          // counter to determine what management task to do
    uint8_t              ebCounter;               // counter to determine when to send EB

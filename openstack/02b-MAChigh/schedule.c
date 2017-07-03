@@ -538,6 +538,32 @@ uint8_t schedule_getNumOfSlotsByType(cellType_t type){
    return returnVal;
 }
 
+//=== from otf
+uint8_t schedule_getNumOfSlotsByTypeAndIndex(cellType_t type, uint8_t index) {
+   uint8_t returnVal;
+   uint8_t _index;
+   scheduleEntry_t* scheduleWalker;
+   
+   INTERRUPT_DECLARATION();
+   DISABLE_INTERRUPTS();
+   
+   returnVal = 0;
+   scheduleWalker = schedule_vars.currentScheduleEntry;
+   do {
+      if(type == scheduleWalker->type){
+          _index = neighbors_addressToIndex(&(scheduleWalker->neighbor));
+          if(_index == index)
+              returnVal += 1;
+      }
+      scheduleWalker = scheduleWalker->next;
+   }while(scheduleWalker!=schedule_vars.currentScheduleEntry);
+   
+   ENABLE_INTERRUPTS();
+
+   
+   return returnVal;
+}
+
 uint8_t schedule_getNumberOfFreeEntries(){
    uint8_t i; 
    uint8_t counter;
@@ -575,10 +601,15 @@ void schedule_syncSlotOffset(slotOffset_t targetSlotOffset) {
 \brief advance to next active slot
 */
 void schedule_advanceSlot() {
+   slotOffset_t prev;
    
    INTERRUPT_DECLARATION();
    DISABLE_INTERRUPTS();  
+   
+   prev = schedule_vars.currentScheduleEntry->slotOffset;
    schedule_vars.currentScheduleEntry = schedule_vars.currentScheduleEntry->next;
+   if(schedule_vars.currentScheduleEntry->slotOffset <= prev)
+      sf0_notifyNewSlotframe();
    
    ENABLE_INTERRUPTS();
 }
@@ -832,7 +863,7 @@ void schedule_housekeeping(){
     for(i=0;i<MAXACTIVESLOTS;i++) {
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX){
             // remove Tx cell if it's scheduled to non-preferred parent
-            if (icmpv6rpl_getPreferredParentEui64(&neighbor)==TRUE) {
+            /*if (icmpv6rpl_getPreferredParentEui64(&neighbor)==TRUE) {
                 if(packetfunctions_sameAddress(&neighbor,&(schedule_vars.scheduleBuf[i].neighbor))==FALSE){
                     if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
                        // one sixtop transcation is happening, only one instance at one time
@@ -851,6 +882,42 @@ void schedule_housekeeping(){
                     );
                     break;
                 }
+            }*/
+            if(schedule_vars.scheduleBuf[i].numTx >= 16 && schedule_vars.scheduleBuf[i].numTxACK == 0) {
+                if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+                   // one sixtop transcation is happening, only one instance at one time
+                   continue;
+                }
+                sixtop_request(
+                   IANA_6TOP_CMD_CLEAR,                             // code
+                   &(schedule_vars.scheduleBuf[i].neighbor),        // neighbor
+                   0,                                               // numCells (not used)
+                   LINKOPTIONS_TX,                                  // cellOptions
+                   NULL,                                            // celllist to add (not used)
+                   NULL,                                            // celllist to add (not used)
+                   sf0_getsfid(),                                   // sfid
+                   0,                                               // list command offset (not used)
+                   0                                                // list command maximum list of cells(not used)
+                );
+            }
+        }
+        if(schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
+            if(schedule_vars.scheduleBuf[i].numRx == 0) {
+                if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+                   // one sixtop transcation is happening, only one instance at one time
+                   continue;
+                }
+                sixtop_request(
+                   IANA_6TOP_CMD_CLEAR,                             // code
+                   &(schedule_vars.scheduleBuf[i].neighbor),        // neighbor
+                   0,                                               // numCells (not used)
+                   LINKOPTIONS_RX,                                  // cellOptions
+                   NULL,                                            // celllist to add (not used)
+                   NULL,                                            // celllist to add (not used)
+                   sf0_getsfid(),                                   // sfid
+                   0,                                               // list command offset (not used)
+                   0                                                // list command maximum list of cells(not used)
+                );
             }
         }
     }

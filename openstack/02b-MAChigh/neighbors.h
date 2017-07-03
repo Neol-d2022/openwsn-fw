@@ -64,6 +64,11 @@ typedef struct {
    bool               usedBackup;
 } addrParents_vars_t;
 
+typedef struct {
+   uint16_t bw_used[MAXNUMNEIGHBORS];
+   uint16_t sf_passed[MAXNUMNEIGHBORS];
+} neighbor_bw_vars_t;
+
 //=========================== prototypes ======================================
 
 void          neighbors_init(void);
@@ -117,6 +122,11 @@ bool          neighbors_getNeighborEui64(open_addr_t* address,uint8_t addr_type,
 void          neighbors_removeOld(void);
 // debug
 bool          debugPrint_neighbors(void);
+
+// from otf
+void           neighbors_notifyNewSlotframe(void);
+void           neighbors_notifyBandwidthUsed(open_addr_t* address);
+uint8_t        neighbors_estimatedBandwidth(uint8_t index);
 
 /**
 \}

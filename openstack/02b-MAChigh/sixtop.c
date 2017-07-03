@@ -186,6 +186,8 @@ void sixtop_request(
     uint16_t     listingOffset,
     uint16_t     listingMaxNumCells
     ){
+    cellInfo_ht       celllist_add[CELLLIST_MAX_LEN];
+    cellInfo_ht       celllist_delete[CELLLIST_MAX_LEN];
     OpenQueueEntry_t* pkt;
     uint8_t           i;
     uint8_t           len;
@@ -204,10 +206,16 @@ void sixtop_request(
         return;
     }
    
+    if(sixtop_vars.busySending6top == TRUE) {
+        sixtop_vars.handler = SIX_HANDLER_NONE;
+        sixtop_vars.six2six_state = SIX_STATE_IDLE;
+        return;
+    }
     // get a free packet buffer
     pkt = openqueue_getFreePacketBuffer(COMPONENT_SIXTOP_RES);
     if (pkt==NULL) {
         sixtop_vars.handler = SIX_HANDLER_NONE;
+        sixtop_vars.six2six_state = SIX_STATE_IDLE;
         openserial_printError(
             COMPONENT_SIXTOP_RES,
             ERR_NO_FREE_PACKET_BUFFER,
@@ -224,6 +232,14 @@ void sixtop_request(
     pkt->creator = COMPONENT_SIXTOP_RES;
     pkt->owner   = COMPONENT_SIXTOP_RES;
    
+    if(celllist_toBeAdded == NULL) {
+      memset(celllist_add,0,sizeof(celllist_add));
+      celllist_toBeAdded = celllist_add;
+    }
+    if(celllist_toBeDeleted == NULL) {
+      memset(celllist_delete,0,sizeof(celllist_delete));
+      celllist_toBeDeleted = celllist_delete;
+    }
     memcpy(&(pkt->l2_nextORpreviousHop),neighbor,sizeof(open_addr_t));
     memcpy(sixtop_vars.celllist_toDelete,celllist_toBeDeleted,CELLLIST_MAX_LEN*sizeof(cellInfo_ht));
     sixtop_vars.cellOptions = cellOptions;
@@ -335,6 +351,7 @@ void sixtop_request(
     pkt->l2_sixtop_messageType    = SIXTOP_CELL_REQUEST;
     
     // send packet
+    sixtop_vars.busySending6top = TRUE;
     sixtop_send(pkt);
     neighbors_updateSequenceNumber(neighbor);
     
@@ -866,6 +883,7 @@ void sixtop_six2six_sendDone(OpenQueueEntry_t* msg, owerror_t error){
     
     bool scheduleChanged;
     msg->owner = COMPONENT_SIXTOP_RES;
+    sixtop_vars.busySending6top = FALSE;
     
     // if this is a request send done
     if (msg->l2_sixtop_messageType == SIXTOP_CELL_REQUEST){
@@ -1077,7 +1095,12 @@ void sixtop_six2six_notifyReceive(
     
     if (type == SIXTOP_CELL_REQUEST){
         // if this is a 6p request message
-      
+        
+        if(sixtop_vars.busySending6top == TRUE) {
+            sixtop_vars.handler = SIX_HANDLER_NONE;
+            sixtop_vars.six2six_state = SIX_STATE_IDLE;
+            return;
+        }
         // get a free packet buffer
         response_pkt = openqueue_getFreePacketBuffer(COMPONENT_SIXTOP_RES);
         if (response_pkt==NULL) {
@@ -1087,6 +1110,8 @@ void sixtop_six2six_notifyReceive(
                 (errorparameter_t)0,
                 (errorparameter_t)0
             );
+            sixtop_vars.handler = SIX_HANDLER_NONE;
+            sixtop_vars.six2six_state = SIX_STATE_IDLE;
             return;
         }
        
@@ -1411,6 +1436,7 @@ void sixtop_six2six_notifyReceive(
 
         if (sixtop_vars.isResponseEnabled){
             // send packet
+            sixtop_vars.busySending6top = TRUE;
             sixtop_send(response_pkt);
         } else {
             openqueue_freePacketBuffer(response_pkt);
