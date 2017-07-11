@@ -177,59 +177,67 @@ void sf0_bandwidthEstimate_task(void){
 
 void sf0_bandwidthEstimate_2_task(void){
     open_addr_t    neighbor;
-    bool           foundNeighbor;
-    int8_t         bw_actual, _actual;
+    bool           foundNeighbor = FALSE;
+    int8_t         bw_actual = 0, _actual = 0;
     int8_t         bw_estimated, _estimated;
     int8_t         maxDiff, _diff;
-    uint8_t        i, parent_i;
+    uint8_t        i;
     cellInfo_ht    celllist_add[CELLLIST_MAX_LEN];
     cellInfo_ht    celllist_delete[CELLLIST_MAX_LEN];
+    
+    neighbors_notifyNewSlotframe();
+    sf0_vars.period += 1;
+    if (sf0_vars.period % SF0_TASK_PERIOD != 0)
+        return;
+    sf0_vars.period = 0;
     
     if (sf0_vars.backoff>0){
         sf0_vars.backoff -= 1;
         return;
     }
     
-    foundNeighbor = icmpv6rpl_getPreferredParentEui64(&neighbor);
-    if (foundNeighbor==FALSE)
-        return;
-    
-    i = neighbors_addressToIndex(&neighbor);
-    bw_actual = schedule_getNumOfSlotsByTypeAndIndex(CELLTYPE_TX, i);
-    bw_estimated = neighbors_estimatedBandwidth(i);
-    parent_i = i;
-    if(bw_actual > bw_estimated && bw_estimated >= (bw_actual-SF0THRESHOLD)) {
+    if(foundNeighbor==FALSE) {
        maxDiff = -1;
        for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
-          if(parent_i == i) continue;
+          //if(parent_i == i) continue;
           _estimated = neighbors_estimatedBandwidth(i);
           if(_estimated == 255) continue;
+          if(neighbors_getGenerationByIndex(i) > 8) continue;
           _actual = schedule_getNumOfSlotsByTypeAndIndex(CELLTYPE_TX, i);
+          /*if(_actual == 0) {
+             bw_actual = _actual;
+             bw_estimated = _estimated;
+             neighbors_getNeighborEui64(&neighbor, ADDR_64B, i);
+             foundNeighbor = TRUE;
+             break;
+          }*/
           _diff = _actual - _estimated;
           if(_diff < 0) _diff *= -1;
-          if(_diff > maxDiff) {
+          if(_diff > maxDiff || (_diff <= maxDiff && bw_actual > bw_estimated && _actual <= _estimated)) {
              bw_actual = _actual;
              bw_estimated = _estimated;
              neighbors_getNeighborEui64(&neighbor, ADDR_64B, i);
              maxDiff = _diff;
+             foundNeighbor = TRUE;
           }
        }
     }
     
+    if(foundNeighbor == FALSE) goto sf0_bandwidthEstimate_2_task_exit;
     
-    if (bw_actual <= bw_estimated){
-        if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-            // one sixtop transcation is happening, only one instance at one time
+    if (bw_actual < bw_estimated){
+    	if (sf0_candidateAddCellList(celllist_add,bw_estimated-bw_actual)==FALSE){
+            // failed to get cell list to add
             return;
         }
-        if (sf0_candidateAddCellList(celllist_add,bw_estimated-bw_actual+1)==FALSE){
-            // failed to get cell list to add
+        if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+            // one sixtop transcation is happening, only one instance at one time
             return;
         }
         sixtop_request(
             IANA_6TOP_CMD_ADD,                  // code
             &neighbor,                          // neighbor
-            bw_estimated-bw_actual+1,   // number cells
+            bw_estimated-bw_actual,   // number cells
             LINKOPTIONS_TX,                     // cellOptions
             celllist_add,                       // celllist to add
             NULL,                               // celllist to delete
@@ -237,18 +245,18 @@ void sf0_bandwidthEstimate_2_task(void){
             0,                                  // list command offset (not used)
             0                                   // list command maximum celllist (not used)
         );
+        return;
     } else {
         // remove cell(s)
-        if ( bw_estimated < (bw_actual-SF0THRESHOLD)) {
-            if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-               // one sixtop transcation is happening, only one instance at one time
-               return;
-            }
+        if (bw_estimated + SF0THRESHOLD < bw_actual) {
             if (sf0_candidateRemoveCellList(celllist_delete,&neighbor,SF0THRESHOLD)==FALSE){
                 // failed to get cell list to delete
                 return;
             }
-            memset(celllist_add,0,sizeof(celllist_add));
+            if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+               // one sixtop transcation is happening, only one instance at one time
+               return;
+            }
             sixtop_request(
                 IANA_6TOP_CMD_DELETE,   // code
                 &neighbor,              // neighbor
@@ -260,9 +268,31 @@ void sf0_bandwidthEstimate_2_task(void){
                 0,                      // list command offset (not used)
                 0                       // list command maximum celllist (not used)
             );
+            return;
         } else {
             // nothing to do
         }
+    }
+
+sf0_bandwidthEstimate_2_task_exit:    
+    if(neighbors_getInvalidGenerationNeighbor(&neighbor) == TRUE) {
+        if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+           // one sixtop transcation is happening, only one instance at one time
+           return;
+        }
+        sixtop_request(
+           IANA_6TOP_CMD_CLEAR,                             // code
+           &neighbor,                                       // neighbor
+           0,                                               // numCells (not used)
+           LINKOPTIONS_TX,                                  // cellOptions
+           NULL,                                            // celllist to add (not used)
+           NULL,                                            // celllist to add (not used)
+           sf0_getsfid(),                                   // sfid
+           0,                                               // list command offset (not used)
+
+           0                                                // list command maximum list of cells(not used)
+        );
+        return;
     }
 }
 

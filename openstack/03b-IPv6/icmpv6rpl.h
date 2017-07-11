@@ -187,6 +187,7 @@ void     icmpv6rpl_notify_primaryGone(void);                             // uhur
 void     icmpv6rpl_notify_backupGone(void);                              // uhurricane
 void     icmpv6rpl_notify_primaryAssigned(uint8_t index);                // uhurricane
 void     icmpv6rpl_notify_backupAssigned(uint8_t index);                 // uhurricane
+void     icmpv6rpl_notify_loopDetected(void);
 
 /**
 \}

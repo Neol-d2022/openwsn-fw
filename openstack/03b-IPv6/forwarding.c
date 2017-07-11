@@ -363,6 +363,7 @@ void forwarding_receive(
                     (errorparameter_t) senderRank,
                     (errorparameter_t) icmpv6rpl_getMyDAGrank()
                 );
+                icmpv6rpl_notify_loopDetected();
             }
             forwarding_createRplOption(rpl_option, rpl_option->flags);
             
@@ -793,6 +794,7 @@ owerror_t forwarding_send_internal_SourceRouting(
                 (errorparameter_t) senderRank,
                 (errorparameter_t) icmpv6rpl_getMyDAGrank()
             );
+            //icmpv6rpl_notify_loopDetected();
         }
         forwarding_createRplOption(rpl_option, rpl_option->flags);
         

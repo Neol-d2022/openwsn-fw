@@ -957,3 +957,13 @@ void icmpv6rpl_notify_backupAssigned(uint8_t index) {
     icmpv6rpl_vars.ParentIndexBackup = index;
     icmpv6rpl_updateMyDAGrankAndParentSelection();
 }
+
+void icmpv6rpl_notify_loopDetected(void) {
+    uint8_t parentIndex;
+    
+    if(icmpv6rpl_getPreferredParentIndex(&parentIndex)) {
+        neighbors_setPreferredParent(parentIndex, FALSE);
+        icmpv6rpl_killPreferredParent();
+        neighbors_setNeighborRank(parentIndex, DEFAULTDAGRANK);
+    }
+}

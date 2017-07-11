@@ -854,8 +854,6 @@ void schedule_indicateTx(asn_t* asnTimestamp, bool succesfullTx) {
 
 void schedule_housekeeping(){
     uint8_t     i;
-    open_addr_t neighbor;
-    
     
     INTERRUPT_DECLARATION();
     DISABLE_INTERRUPTS();
@@ -899,6 +897,7 @@ void schedule_housekeeping(){
                    0,                                               // list command offset (not used)
                    0                                                // list command maximum list of cells(not used)
                 );
+                break;
             }
         }
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
@@ -918,6 +917,7 @@ void schedule_housekeeping(){
                    0,                                               // list command offset (not used)
                    0                                                // list command maximum list of cells(not used)
                 );
+                break;
             }
         }
     }

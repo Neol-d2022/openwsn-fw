@@ -143,6 +143,15 @@ uint8_t neighbors_getGeneration(open_addr_t* address){
     return neighbors_vars.neighbors[i].generation;
 }
 
+uint8_t neighbors_getGenerationByIndex(uint8_t index) {
+    if(index < MAXNUMNEIGHBORS) {
+        if(neighbors_vars.neighbors[index].used==1) {
+            return neighbors_vars.neighbors[index].generation;
+        }
+    }
+    return 10;
+}
+
 uint8_t neighbors_getSequenceNumber(open_addr_t* address){
     uint8_t i;
     for (i=0;i<MAXNUMNEIGHBORS;i++){
@@ -417,6 +426,30 @@ void neighbors_resetGeneration(open_addr_t* address){
     }
 }
 
+void neighbors_invaildateGeneration(open_addr_t* address){
+    uint8_t i;
+    for (i=0;i<MAXNUMNEIGHBORS;i++){
+        if (packetfunctions_sameAddress(address, &neighbors_vars.neighbors[i].addr_64b)){
+            neighbors_vars.neighbors[i].generation = 9;
+            break;
+        }
+    }
+}
+
+bool neighbors_getInvalidGenerationNeighbor(open_addr_t* address) {
+    uint8_t i;
+
+    for (i=0;i<MAXNUMNEIGHBORS;i++) {
+        if(neighbors_vars.neighbors[i].used==TRUE) {
+            if(neighbors_vars.neighbors[i].generation >= 9) {
+                neighbors_getNeighborEui64(address, ADDR_64B, i);
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
 //===== write addresses
 
 /**
@@ -654,7 +687,7 @@ void  neighbors_removeOld() {
     // neighbors marked as NO_RES will never removed.
     
     // first round
-    lowestRank = MAXDAGRANK;
+    /*lowestRank = MAXDAGRANK;
     for (i=0;i<MAXNUMNEIGHBORS;i++) {
         if (neighbors_vars.neighbors[i].used==1) {
             if (
@@ -731,7 +764,7 @@ void  neighbors_removeOld() {
                 }
             }
         }
-    }
+    }*/
 }
 
 //===== debug
@@ -854,16 +887,17 @@ bool isThisRowMatching(open_addr_t* address, uint8_t rowNumber) {
 
 // from otf
 void neighbors_notifyNewSlotframe(void) {
-   /*uint8_t i;
+   uint8_t i;
    
    for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
       if(neighbors_vars.neighbors[i].used==1) {
+         neighbor_bw_vars.sf_passed[i] += 1;
          if(neighbor_bw_vars.bw_used[i] >= 0x7FFF || neighbor_bw_vars.sf_passed[i] >= 0x7FFF) {
             neighbor_bw_vars.bw_used[i] >>= 1;
             neighbor_bw_vars.sf_passed[i] >>= 1;
          }
       }
-   }*/
+   }
 }
 
 void neighbors_notifyBandwidthUsed(open_addr_t* address) {
@@ -886,16 +920,24 @@ uint8_t neighbors_estimatedBandwidth(uint8_t index) {
    if(i < MAXNUMNEIGHBORS) {
       if(neighbors_vars.neighbors[i].used) {
          neighbors_getStat(i, &tx, &txAck);
-         if((unsigned int)neighbor_bw_vars.sf_passed[i] * txAck == 0) return 0;
+         if((unsigned int)neighbor_bw_vars.sf_passed[i] * txAck == 0) {
+            if(neighbors_vars.neighbors[i].parentPreference == 0)
+                return 1;
+            else return 1;
+         }
          else {
             r = (double)tx / txAck;
             r = sqrt(r);
             if(r > 2.0) {
-                if(neighbors_vars.neighbors[i].parentPreference == 0)
-                    return 0;
-                else return 1;
+                if(tx > 16) {
+                    if(neighbors_vars.neighbors[i].parentPreference == 0)
+                        return 0;
+                    else return 0;
+                }
+                else 
+                    r = 2.0;
             }
-            return (uint8_t)ceil((((unsigned int)neighbor_bw_vars.bw_used[i] * r)) / ((unsigned int)neighbor_bw_vars.sf_passed[i]));
+            return (uint8_t)round(((neighbor_bw_vars.bw_used[i] * r)) / (neighbor_bw_vars.sf_passed[i])) + 1;
          }
       }
    }

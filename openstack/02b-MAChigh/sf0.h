@@ -12,11 +12,14 @@
 
 //=========================== define ==========================================
 
+#define SF0_TASK_PERIOD 16
+
 //=========================== typedef =========================================
 
 typedef struct {
    uint8_t numAppPacketsPerSlotFrame;
    uint8_t backoff;
+   uint8_t period;
 } sf0_vars_t;
 
 //=========================== module variables ================================
