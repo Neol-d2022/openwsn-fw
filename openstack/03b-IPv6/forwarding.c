@@ -260,6 +260,7 @@ void forwarding_receive(
     ) {
     uint8_t flags;
     uint16_t senderRank;
+    open_addr_t sender;
    
     // take ownership
     msg->owner                     = COMPONENT_FORWARDING;
@@ -364,6 +365,7 @@ void forwarding_receive(
                     (errorparameter_t) icmpv6rpl_getMyDAGrank()
                 );
                 icmpv6rpl_notify_loopDetected();
+                uantiloop_loopDetected(&(msg->l2_nextORpreviousHop));
             }
             forwarding_createRplOption(rpl_option, rpl_option->flags);
             
@@ -371,7 +373,7 @@ void forwarding_receive(
             if (deadline_option != NULL)
                 forwarding_createDeadlineOption(deadline_option);
 #endif
-            
+            memcpy(&sender, &(msg->l2_nextORpreviousHop), sizeof(sender));
             // resend as if from upper layer
             if (
                 forwarding_send_internal_RoutingTable(
@@ -386,6 +388,7 @@ void forwarding_receive(
                     PCKTFORWARD 
                 )==E_FAIL
             ) {
+            	uantiloop_loopDetected(&sender);
                 openqueue_freePacketBuffer(msg);
             }
         } else {
