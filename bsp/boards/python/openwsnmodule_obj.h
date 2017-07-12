@@ -40,6 +40,7 @@
 #include "uecho_obj.h"
 #include "ushortid_obj.h"
 #include "uhurricane_obj.h"
+#include "uantiloop_obj.h"
 
 //=========================== prototypes ======================================
 
@@ -233,6 +234,7 @@ struct OpenMote {
    ushortid_vars_t      ushortid_vars;
    uhurricane_vars_t    uhurricane_vars;
    addrParents_vars_t   addrParents_vars;
+   uantiloop_vars_t     uantiloop_vars;
 };
 
 #endif

@@ -98,6 +98,7 @@ enum {
    WKP_UDP_SERIALBRIDGE                =    2001,
    WKP_UDP_HURRICANE                   =   15003,
    WKP_UDP_SHORTID                     =   15004,
+   WKP_UDP_ANTILOOP                    =   15005,
 };
 
 //status elements
@@ -178,6 +179,7 @@ enum {
    COMPONENT_UMONITOR                  = 0x2a,
    COMPONENT_USHORTID                  = 0xa0,
    COMPONENT_UHURRICANE                = 0xa1,
+   COMPONENT_UANTILOOP                 = 0xa2,
 };
 
 /**

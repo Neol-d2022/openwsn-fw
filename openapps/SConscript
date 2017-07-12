@@ -23,6 +23,7 @@ if localEnv['board']=='python':
         'cstorm',
         'ushortid',
         'uhurricane',
+        'uantiloop',
     ]
 
 # additional apps the user wants to build
