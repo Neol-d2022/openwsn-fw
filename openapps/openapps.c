@@ -25,6 +25,7 @@
 #include "ushortid.h"
 #include "uhurricane.h"
 #include "uantiloop.h"
+#include "uprober.h"
 
 //=========================== variables =======================================
 
@@ -54,4 +55,5 @@ void openapps_init(void) {
    ushortid_init();
    uhurricane_init();
    uantiloop_init();
+   uprober_init();
 }

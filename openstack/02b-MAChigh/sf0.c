@@ -248,7 +248,7 @@ void sf0_bandwidthEstimate_2_task(void){
         return;
     } else {
         // remove cell(s)
-        if (bw_estimated + SF0THRESHOLD < bw_actual) {
+        if (bw_estimated + SF0THRESHOLD <= bw_actual) {
             if (sf0_candidateRemoveCellList(celllist_delete,&neighbor,SF0THRESHOLD)==FALSE){
                 // failed to get cell list to delete
                 return;

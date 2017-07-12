@@ -90,7 +90,9 @@ owerror_t iphc_sendFromForwarding(
    
     // error checking
     if (idmanager_getIsDAGroot()==TRUE &&
-        packetfunctions_isAllRoutersMulticast(&(msg->l3_destinationAdd))==FALSE) {
+        packetfunctions_isAllRoutersMulticast(&(msg->l3_destinationAdd))==FALSE &&
+        msg->creator != COMPONENT_UPROBER
+       ) {
         openserial_printCritical(COMPONENT_IPHC,ERR_BRIDGE_MISMATCH,
                             (errorparameter_t)0,
                             (errorparameter_t)0);

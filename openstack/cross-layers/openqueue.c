@@ -198,7 +198,9 @@ OpenQueueEntry_t* openqueue_sixtopGetReceivedPacket() {
 //======= called by IEEE80215E
 
 OpenQueueEntry_t* openqueue_macGetDataPacket(open_addr_t* toNeighbor) {
-   uint8_t i, minTxCells, txCells, index, j;
+   uint8_t i, minTxCells, txCells, index, j, numTxAck;
+   scheduleEntry_t *sche;
+   
    INTERRUPT_DECLARATION();
    DISABLE_INTERRUPTS();
 
@@ -229,17 +231,35 @@ OpenQueueEntry_t* openqueue_macGetDataPacket(open_addr_t* toNeighbor) {
        }
     }
     
-    if(j < QUEUELENGTH) {
+    if(j < QUEUELENGTH && minTxCells == 0) {
        ENABLE_INTERRUPTS();
        return &openqueue_vars.queue[j];
     }
   
    if (toNeighbor->type==ADDR_64B) {
+      sche = schedule_getCurrentScheduleEntry();
+      numTxAck = sche->numTxACK;
+      if (numTxAck == 0) {
+         for (i=0;i<QUEUELENGTH;i++) {
+            if (openqueue_vars.queue[i].creator==COMPONENT_UPROBER &&
+               packetfunctions_sameAddress(toNeighbor,&openqueue_vars.queue[i].l2_nextORpreviousHop)
+             ) {
+               ENABLE_INTERRUPTS();
+               return &openqueue_vars.queue[i];
+            }
+         }
+      }
       // a neighbor is specified, look for a packet unicast to that neigbhbor
       for (i=0;i<QUEUELENGTH;i++) {
          if (openqueue_vars.queue[i].owner==COMPONENT_SIXTOP_TO_IEEE802154E &&
             packetfunctions_sameAddress(toNeighbor,&openqueue_vars.queue[i].l2_nextORpreviousHop)
           ) {
+            if(
+                openqueue_vars.queue[i].creator==COMPONENT_UPROBER &&
+                schedule_getLeastUsedTxCell(&openqueue_vars.queue[i].l2_nextORpreviousHop) != numTxAck
+            ) {
+                continue;
+            }
             ENABLE_INTERRUPTS();
             return &openqueue_vars.queue[i];
          }
@@ -258,7 +278,10 @@ OpenQueueEntry_t* openqueue_macGetDataPacket(open_addr_t* toNeighbor) {
                 )
              )
             ) {
-            if ((index = neighbors_addressToIndex(&(openqueue_vars.queue[i].l2_nextORpreviousHop))) < MAXNUMNEIGHBORS) {
+            if (openqueue_vars.queue[i].creator==COMPONENT_UPROBER && schedule_getLeastUsedTxCell(&openqueue_vars.queue[i].l2_nextORpreviousHop) != 255) {
+               txCells = 254;
+            }
+            else if ((index = neighbors_addressToIndex(&(openqueue_vars.queue[i].l2_nextORpreviousHop))) < MAXNUMNEIGHBORS) {
                txCells = schedule_getNumOfSlotsByTypeAndIndex_dequeue(CELLTYPE_TX, index);
             }
             else {

@@ -99,6 +99,7 @@ enum {
    WKP_UDP_HURRICANE                   =   15003,
    WKP_UDP_SHORTID                     =   15004,
    WKP_UDP_ANTILOOP                    =   15005,
+   WKP_UDP_PROBER                      =   15006,
 };
 
 //status elements
@@ -180,6 +181,7 @@ enum {
    COMPONENT_USHORTID                  = 0xa0,
    COMPONENT_UHURRICANE                = 0xa1,
    COMPONENT_UANTILOOP                 = 0xa2,
+   COMPONENT_UPROBER                   = 0xa3,
 };
 
 /**

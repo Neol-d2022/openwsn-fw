@@ -222,6 +222,10 @@ bool               schedule_getOneCellAfterOffset(
     uint16_t* channeloffset
 );
 void               schedule_housekeeping(void);
+// from uprober
+uint8_t            schedule_getNotUsedTxCell(open_addr_t *address);
+// from openqueue
+uint8_t            schedule_getLeastUsedTxCell(open_addr_t *neighbor);
 /**
 \}
 \}

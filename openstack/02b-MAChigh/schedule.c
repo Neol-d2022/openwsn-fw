@@ -599,6 +599,54 @@ uint8_t schedule_getNumOfSlotsByTypeAndIndex_dequeue(cellType_t type, uint8_t in
    return returnVal;
 }
 
+//=== from uprober
+uint8_t schedule_getNotUsedTxCell(open_addr_t *address){
+   scheduleEntry_t* scheduleWalker;
+   
+   INTERRUPT_DECLARATION();
+   DISABLE_INTERRUPTS();
+   
+   scheduleWalker = schedule_vars.currentScheduleEntry;
+   do {
+      if(CELLTYPE_TX == scheduleWalker->type){
+          if(scheduleWalker->numTxACK == 0) {
+              memcpy(address, &(scheduleWalker->neighbor), sizeof(*address));
+              ENABLE_INTERRUPTS();
+              return 1;
+          }
+      }
+      scheduleWalker = scheduleWalker->next;
+   }while(scheduleWalker!=schedule_vars.currentScheduleEntry);
+   
+   ENABLE_INTERRUPTS();
+   
+   return 0;
+}
+
+//=== from openqueue
+uint8_t schedule_getLeastUsedTxCell(open_addr_t *neighbor){
+   uint8_t minSent, index, _index;
+   scheduleEntry_t* scheduleWalker;
+   
+   _index = neighbors_addressToIndex(neighbor);
+   minSent = 255;
+   if(_index >= MAXNUMNEIGHBORS) return minSent;
+   scheduleWalker = schedule_vars.currentScheduleEntry;
+   do {
+      if(CELLTYPE_TX == scheduleWalker->type){
+          index = neighbors_addressToIndex(&(scheduleWalker->neighbor));
+          if(index == _index) {
+              if(scheduleWalker->numTxACK < minSent) {
+                  minSent = scheduleWalker->numTxACK;
+              }
+          }
+      }
+      scheduleWalker = scheduleWalker->next;
+   }while(scheduleWalker!=schedule_vars.currentScheduleEntry);
+   
+   return minSent;
+}
+
 uint8_t schedule_getNumberOfFreeEntries(){
    uint8_t i; 
    uint8_t counter;
@@ -935,7 +983,7 @@ void schedule_housekeeping(){
             }
         }
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
-            if(ieee154e_asnDiff(&schedule_vars.scheduleBuf[i].lastUsedAsn) >= (16 * SLOTFRAME_LENGTH)) {
+            if(ieee154e_asnDiff(&schedule_vars.scheduleBuf[i].lastUsedAsn) >= (16 * SLOTFRAME_LENGTH) && schedule_vars.scheduleBuf[i].numRx == 0) {
                 if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
                    // one sixtop transcation is happening, only one instance at one time
                    continue;
