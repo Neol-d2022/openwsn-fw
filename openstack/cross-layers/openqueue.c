@@ -198,11 +198,13 @@ OpenQueueEntry_t* openqueue_sixtopGetReceivedPacket() {
 //======= called by IEEE80215E
 
 OpenQueueEntry_t* openqueue_macGetDataPacket(open_addr_t* toNeighbor) {
-   uint8_t i;
+   uint8_t i, minTxCells, txCells, index, j;
    INTERRUPT_DECLARATION();
    DISABLE_INTERRUPTS();
 
     // first to look the sixtop RES packet
+    minTxCells = SLOTFRAME_LENGTH;
+    j = QUEUELENGTH;
     for (i=0;i<QUEUELENGTH;i++) {
        if (
            openqueue_vars.queue[i].owner==COMPONENT_SIXTOP_TO_IEEE802154E &&
@@ -214,9 +216,22 @@ OpenQueueEntry_t* openqueue_macGetDataPacket(open_addr_t* toNeighbor) {
                ) || toNeighbor->type==ADDR_ANYCAST
            )
        ){
-          ENABLE_INTERRUPTS();
-          return &openqueue_vars.queue[i];
+          if ((index = neighbors_addressToIndex(&(openqueue_vars.queue[i].l2_nextORpreviousHop))) < MAXNUMNEIGHBORS) {
+             txCells = schedule_getNumOfSlotsByTypeAndIndex_dequeue(CELLTYPE_TX, index);
+          }
+          else {
+             txCells = 0;
+          }
+          if(minTxCells > txCells) {
+             minTxCells = txCells;
+             j = i;
+          }
        }
+    }
+    
+    if(j < QUEUELENGTH) {
+       ENABLE_INTERRUPTS();
+       return &openqueue_vars.queue[j];
     }
   
    if (toNeighbor->type==ADDR_64B) {
@@ -232,6 +247,8 @@ OpenQueueEntry_t* openqueue_macGetDataPacket(open_addr_t* toNeighbor) {
    } else if (toNeighbor->type==ADDR_ANYCAST) {
       // anycast case: look for a packet which is either not created by RES
       // or an KA (created by RES, but not broadcast)
+      minTxCells = SLOTFRAME_LENGTH;
+      j = QUEUELENGTH;
       for (i=0;i<QUEUELENGTH;i++) {
          if (openqueue_vars.queue[i].owner==COMPONENT_SIXTOP_TO_IEEE802154E &&
              ( openqueue_vars.queue[i].creator!=COMPONENT_SIXTOP ||
@@ -241,9 +258,21 @@ OpenQueueEntry_t* openqueue_macGetDataPacket(open_addr_t* toNeighbor) {
                 )
              )
             ) {
-            ENABLE_INTERRUPTS();
-            return &openqueue_vars.queue[i];
+            if ((index = neighbors_addressToIndex(&(openqueue_vars.queue[i].l2_nextORpreviousHop))) < MAXNUMNEIGHBORS) {
+               txCells = schedule_getNumOfSlotsByTypeAndIndex_dequeue(CELLTYPE_TX, index);
+            }
+            else {
+               txCells = 0;
+            }
+            if(minTxCells > txCells) {
+               minTxCells = txCells;
+               j = i;
+            }
          }
+      }
+      if(j < QUEUELENGTH) {
+         ENABLE_INTERRUPTS();
+         return &openqueue_vars.queue[j];
       }
    }
    ENABLE_INTERRUPTS();

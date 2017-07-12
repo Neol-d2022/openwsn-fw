@@ -278,6 +278,8 @@ owerror_t schedule_addActiveSlot(
    scheduleEntry_t* slotContainer;
    scheduleEntry_t* previousSlotWalker;
    scheduleEntry_t* nextSlotWalker;
+   uint8_t asn8[5];
+   asn_t asn;
    
    INTERRUPT_DECLARATION();
    DISABLE_INTERRUPTS();
@@ -308,6 +310,14 @@ owerror_t schedule_addActiveSlot(
    slotContainer->shared                    = shared;
    slotContainer->channelOffset             = channelOffset;
    memcpy(&slotContainer->neighbor,neighbor,sizeof(open_addr_t));
+   
+   // refresh asn
+   memcpy(&slotContainer->neighbor,neighbor,sizeof(open_addr_t));
+   ieee154e_getAsn(asn8);
+   asn.bytes0and1 = asn8[0] + asn8[1] * 256;
+   asn.bytes2and3 = asn8[2] + asn8[3] * 256;
+   asn.byte4      = asn8[4];
+   slotContainer->lastUsedAsn = asn;
    
    // insert in circular list
    if (schedule_vars.currentScheduleEntry==NULL) {
@@ -565,6 +575,26 @@ uint8_t schedule_getNumOfSlotsByTypeAndIndex(cellType_t type, uint8_t index) {
    
    ENABLE_INTERRUPTS();
 
+   
+   return returnVal;
+}
+
+//=== from openqueue
+uint8_t schedule_getNumOfSlotsByTypeAndIndex_dequeue(cellType_t type, uint8_t index) {
+   uint8_t returnVal;
+   uint8_t _index;
+   scheduleEntry_t* scheduleWalker;
+   
+   returnVal = 0;
+   scheduleWalker = schedule_vars.currentScheduleEntry;
+   do {
+      if(type == scheduleWalker->type){
+          _index = neighbors_addressToIndex(&(scheduleWalker->neighbor));
+          if(_index == index)
+              returnVal += 1;
+      }
+      scheduleWalker = scheduleWalker->next;
+   }while(scheduleWalker!=schedule_vars.currentScheduleEntry);
    
    return returnVal;
 }
@@ -905,7 +935,7 @@ void schedule_housekeeping(){
             }
         }
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
-            if(schedule_vars.scheduleBuf[i].numRx == 0) {
+            if(ieee154e_asnDiff(&schedule_vars.scheduleBuf[i].lastUsedAsn) >= (16 * SLOTFRAME_LENGTH)) {
                 if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
                    // one sixtop transcation is happening, only one instance at one time
                    continue;

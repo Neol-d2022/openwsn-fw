@@ -193,6 +193,7 @@ void              schedule_removeAllCells(
 scheduleEntry_t*  schedule_getCurrentScheduleEntry(void);
 uint8_t           schedule_getNumOfSlotsByType(cellType_t type);
 uint8_t           schedule_getNumOfSlotsByTypeAndIndex(cellType_t type, uint8_t index);
+uint8_t           schedule_getNumOfSlotsByTypeAndIndex_dequeue(cellType_t type, uint8_t index);
 uint8_t           schedule_getNumberOfFreeEntries(void);
 // from IEEE802154E
 void               schedule_syncSlotOffset(slotOffset_t targetSlotOffset);

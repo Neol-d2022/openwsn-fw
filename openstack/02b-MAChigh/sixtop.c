@@ -375,6 +375,7 @@ void sixtop_request(
     // send packet
     sixtop_vars.busySending6top += 1;
     sixtop_send(pkt);
+    neighbors_notifyBandwidthUsed(neighbor);
     neighbors_updateSequenceNumber(neighbor);
 }
 
@@ -1437,6 +1438,7 @@ void sixtop_six2six_notifyReceive(
         if (sixtop_vars.isResponseEnabled){
             // send packet
             sixtop_vars.busySending6top += 1;
+            neighbors_notifyBandwidthUsed(&(response_pkt->l2_nextORpreviousHop));
             sixtop_send(response_pkt);
         } else {
             openqueue_freePacketBuffer(response_pkt);
