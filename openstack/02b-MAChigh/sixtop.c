@@ -239,7 +239,9 @@ void sixtop_request(
       celllist_toBeDeleted = celllist_delete;
     }
     memcpy(&(pkt->l2_nextORpreviousHop),neighbor,sizeof(open_addr_t));
-    memcpy(sixtop_vars.celllist_toDelete,celllist_toBeDeleted,CELLLIST_MAX_LEN*sizeof(cellInfo_ht));
+    if (celllist_toBeDeleted != NULL){
+        memcpy(sixtop_vars.celllist_toDelete,celllist_toBeDeleted,CELLLIST_MAX_LEN*sizeof(cellInfo_ht));
+    }
     sixtop_vars.cellOptions = cellOptions;
     
     len  = 0;
@@ -915,11 +917,11 @@ void sixtop_six2six_sendDone(OpenQueueEntry_t* msg, owerror_t error){
                 break;
             }
             // start timeout timer if I am waiting for a response
-            opentimers_scheduleAbsolute(
+            opentimers_scheduleIn(
                 sixtop_vars.timeoutTimerId,
                 SIX2SIX_TIMEOUT_MS,
-                opentimers_getValue(),
                 TIME_MS,
+                TIMER_ONESHOT,
                 sixtop_timeout_timer_cb
             );
         }

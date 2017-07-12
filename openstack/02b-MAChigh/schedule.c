@@ -455,6 +455,11 @@ bool schedule_isSlotOffsetAvailable(uint16_t slotOffset){
    INTERRUPT_DECLARATION();
    DISABLE_INTERRUPTS();
    
+   if (slotOffset>=schedule_vars.frameLength){
+      ENABLE_INTERRUPTS();
+      return FALSE;
+   }
+   
    scheduleWalker = schedule_vars.currentScheduleEntry;
    do {
       if(slotOffset == scheduleWalker->slotOffset){
@@ -850,7 +855,6 @@ void schedule_indicateTx(asn_t* asnTimestamp, bool succesfullTx) {
    
    ENABLE_INTERRUPTS();
 }
-
 
 void schedule_housekeeping(){
     uint8_t     i;
