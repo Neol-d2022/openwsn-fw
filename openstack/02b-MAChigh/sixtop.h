@@ -92,10 +92,10 @@ typedef enum {
 //=========================== typedef =========================================
 
 #define SIX2SIX_TIMEOUT_MS 4000
-typedef uint8_t                 (*sixtop_sf_getsfid)(void);
-typedef uint16_t                (*sixtop_sf_getmetadata)(void);
-typedef metadata_t              (*sixtop_sf_translatemetadata)(void);
-typedef void (*sixtop_sf_handle_callback)(uint8_t arg);
+typedef uint8_t                 (*sixtop_sf_getsfid_cbt)(void);
+typedef uint16_t                (*sixtop_sf_getmetadata_cbt)(void);
+typedef metadata_t              (*sixtop_sf_translatemetadata_cbt)(void);
+typedef void                    (*sixtop_sf_handle_callback_cbt)(uint8_t arg);
 
 //=========================== module variables ================================
 
@@ -118,10 +118,10 @@ typedef struct {
    bool                         isResponseEnabled;
    uint8_t                      cellOptions;
    cellInfo_ht                  celllist_toDelete[CELLLIST_MAX_LEN];
-   sixtop_sf_getsfid            cb_sf_getsfid;
-   sixtop_sf_getmetadata        cb_sf_getMetadata;
-   sixtop_sf_translatemetadata  cb_sf_translateMetadata;
-   sixtop_sf_handle_callback    cb_sf_handleRCError;
+   sixtop_sf_getsfid_cbt            cb_sf_getsfid;
+   sixtop_sf_getmetadata_cbt        cb_sf_getMetadata;
+   sixtop_sf_translatemetadata_cbt  cb_sf_translateMetadata;
+   sixtop_sf_handle_callback_cbt    cb_sf_handleRCError;
 } sixtop_vars_t;
 
 //=========================== prototypes ======================================
@@ -132,10 +132,10 @@ void      sixtop_setKaPeriod(uint16_t kaPeriod);
 void      sixtop_setEBPeriod(uint8_t ebPeriod);
 bool      sixtop_setHandler(six2six_handler_t handler);
 void      sixtop_setSFcallback(
-    sixtop_sf_getsfid     cb0,
-    sixtop_sf_getmetadata cb1, 
-    sixtop_sf_translatemetadata cb2, 
-    sixtop_sf_handle_callback cb3
+    sixtop_sf_getsfid_cbt           cb0,
+    sixtop_sf_getmetadata_cbt       cb1, 
+    sixtop_sf_translatemetadata_cbt cb2, 
+    sixtop_sf_handle_callback_cbt   cb3
 );
 // scheduling
 void sixtop_request(
