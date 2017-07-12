@@ -30,6 +30,7 @@ void uantiloop_receive(OpenQueueEntry_t* request) {
    if((senderIndex = neighbors_addressToIndex(&(request->l2_nextORpreviousHop))) < MAXNUMNEIGHBORS) {
       if(icmpv6rpl_getPreferredParentIndex(&parentIndex)) {
          if(senderIndex == parentIndex) {
+            neighbors_setNeighborRank(parentIndex, DEFAULTDAGRANK);
             icmpv6rpl_notify_loopDetected();
          }
       }
@@ -71,8 +72,9 @@ void uantiloop_loopDetected(open_addr_t* sender) {
    
    packetfunctions_mac64bToIp128b(idmanager_getMyID(ADDR_PREFIX),sender,&reply->l3_destinationAdd);
    
-   packetfunctions_reserveHeaderSize(reply,LENGTH_ADDR64b);
-   memcpy(&reply->payload[0],idmanager_getMyID(ADDR_64B),LENGTH_ADDR64b);
+   // NULL packet
+   //packetfunctions_reserveHeaderSize(reply,LENGTH_ADDR64b);
+   //memcpy(&reply->payload[0],idmanager_getMyID(ADDR_64B),LENGTH_ADDR64b);
    
    printf("[INFO] %hu send antiloop packet to %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (sender->addr_64b)[7]);
    uantiloop_vars.busySending += 1;
