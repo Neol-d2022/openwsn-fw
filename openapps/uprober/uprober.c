@@ -7,7 +7,7 @@
 //=========================== defines =========================================
 
 /// inter-packet period (in ms)
-#define UPROBERPERIOD  (2 * SLOTFRAME_LENGTH * 15)
+#define UPROBERPERIOD  (8 * SLOTFRAME_LENGTH * 15)
 
 //=========================== variables =======================================
 
