@@ -77,10 +77,12 @@ void uantiloop_loopDetected(open_addr_t* sender) {
    //memcpy(&reply->payload[0],idmanager_getMyID(ADDR_64B),LENGTH_ADDR64b);
    
    printf("[INFO] %hu send antiloop packet to %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (sender->addr_64b)[7]);
-   uantiloop_vars.busySending += 1;
+   
    if ((openudp_send(reply))==E_FAIL) {
       openqueue_freePacketBuffer(reply);
+      return;
    }
+   uantiloop_vars.busySending += 1;
 }
 
 //=========================== private =========================================

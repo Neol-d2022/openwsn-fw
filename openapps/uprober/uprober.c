@@ -80,10 +80,12 @@ void uprober_task_cb(void) {
    packetfunctions_mac64bToIp128b(idmanager_getMyID(ADDR_PREFIX),&neighbor,&probe->l3_destinationAdd);
    
    printf("[INFO] %hu send probe packet to %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (neighbor.addr_64b)[7]);
-   uprober_vars.busySending += 1;
+   
    if ((openudp_send(probe))==E_FAIL) {
       openqueue_freePacketBuffer(probe);
+      return;
    }
+   uprober_vars.busySending += 1;
 }
 
 //=========================== private =========================================
