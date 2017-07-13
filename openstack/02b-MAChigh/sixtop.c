@@ -186,8 +186,6 @@ void sixtop_request(
     uint16_t     listingOffset,
     uint16_t     listingMaxNumCells
     ){
-    cellInfo_ht       celllist_add[CELLLIST_MAX_LEN];
-    cellInfo_ht       celllist_delete[CELLLIST_MAX_LEN];
     OpenQueueEntry_t* pkt;
     uint8_t           i;
     uint8_t           len;
@@ -230,14 +228,6 @@ void sixtop_request(
     pkt->creator = COMPONENT_SIXTOP_RES;
     pkt->owner   = COMPONENT_SIXTOP_RES;
    
-    if(celllist_toBeAdded == NULL) {
-      memset(celllist_add,0,sizeof(celllist_add));
-      celllist_toBeAdded = celllist_add;
-    }
-    if(celllist_toBeDeleted == NULL) {
-      memset(celllist_delete,0,sizeof(celllist_delete));
-      celllist_toBeDeleted = celllist_delete;
-    }
     memcpy(&(pkt->l2_nextORpreviousHop),neighbor,sizeof(open_addr_t));
     if (celllist_toBeDeleted != NULL){
         memcpy(sixtop_vars.celllist_toDelete,celllist_toBeDeleted,CELLLIST_MAX_LEN*sizeof(cellInfo_ht));
