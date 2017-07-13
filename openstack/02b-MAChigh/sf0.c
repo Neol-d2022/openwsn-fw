@@ -213,7 +213,7 @@ void sf0_bandwidthEstimate_2_task(void){
           }*/
           _diff = _actual - _estimated;
           if(_diff < 0) _diff *= -1;
-          if(_diff > maxDiff || (_diff <= maxDiff && bw_actual > bw_estimated && _actual <= _estimated)) {
+          if(_diff > maxDiff || (_diff <= maxDiff && bw_actual > bw_estimated && _actual < _estimated)) {
              bw_actual = _actual;
              bw_estimated = _estimated;
              neighbors_getNeighborEui64(&neighbor, ADDR_64B, i);
