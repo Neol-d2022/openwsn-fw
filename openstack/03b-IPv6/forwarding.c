@@ -260,7 +260,6 @@ void forwarding_receive(
     ) {
     uint8_t flags;
     uint16_t senderRank;
-    open_addr_t sender;
    
     // take ownership
     msg->owner                     = COMPONENT_FORWARDING;
@@ -373,7 +372,6 @@ void forwarding_receive(
             if (deadline_option != NULL)
                 forwarding_createDeadlineOption(deadline_option);
 #endif
-            memcpy(&sender, &(msg->l2_nextORpreviousHop), sizeof(sender));
             // resend as if from upper layer
             if (
                 forwarding_send_internal_RoutingTable(
@@ -388,7 +386,6 @@ void forwarding_receive(
                     PCKTFORWARD 
                 )==E_FAIL
             ) {
-            	uantiloop_loopDetected(&sender);
                 openqueue_freePacketBuffer(msg);
             }
         } else {
@@ -465,7 +462,9 @@ owerror_t forwarding_send_internal_RoutingTable(
       uint32_t*              flow_label,
       uint8_t                fw_SendOrfw_Rcv
    ) {
+   open_addr_t sender;
    
+   memcpy(&sender, &(msg->l2_nextORpreviousHop), sizeof(sender));
    // retrieve the next hop from the routing table
    forwarding_getNextHop(&(msg->l3_destinationAdd),&(msg->l2_nextORpreviousHop));
    if (msg->l2_nextORpreviousHop.type==ADDR_NONE) {
@@ -475,6 +474,8 @@ owerror_t forwarding_send_internal_RoutingTable(
          (errorparameter_t)0,
          (errorparameter_t)0
       );
+      if(fw_SendOrfw_Rcv == PCKTFORWARD)
+         uantiloop_loopDetected(&sender);
       return E_FAIL;
    }
    neighbors_notifyBandwidthUsed(&(msg->l2_nextORpreviousHop));
