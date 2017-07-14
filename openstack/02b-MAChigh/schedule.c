@@ -935,12 +935,18 @@ void schedule_indicateTx(asn_t* asnTimestamp, bool succesfullTx) {
 }
 
 void schedule_housekeeping(){
-    uint8_t     i;
+    uint8_t     i, j;
     
     INTERRUPT_DECLARATION();
     DISABLE_INTERRUPTS();
 
     for(i=0;i<MAXACTIVESLOTS;i++) {
+        if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX || schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
+            j = neighbors_addressToIndex(&(schedule_vars.scheduleBuf[i].neighbor));
+            if(j >= MAXNUMNEIGHBORS) { // That neighbor has desynchronized
+                schedule_removeActiveSlot(i, &(schedule_vars.scheduleBuf[i].neighbor));
+            }
+        }
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX){
             // remove Tx cell if it's scheduled to non-preferred parent
             /*if (icmpv6rpl_getPreferredParentEui64(&neighbor)==TRUE) {
