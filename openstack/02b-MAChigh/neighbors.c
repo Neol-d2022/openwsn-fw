@@ -98,6 +98,12 @@ uint8_t neighbors_nextNull_ushortid(void) {
     return i;
 }
 
+uint16_t neighbors_get_ushortid(uint8_t neighborIndex) {
+   if(neighborIndex<MAXNUMNEIGHBORS)
+      return neighbors_shortid_vars.neighborsId[neighborIndex];
+   else return 0;
+}
+
 /**
 \brief Find neighbor to which to send KA.
 
@@ -892,6 +898,10 @@ void neighbors_notifyNewSlotframe(void) {
       if(neighbors_vars.neighbors[i].used==1) {
          neighbor_bw_vars.sf_passed[i] += 1;
          if(neighbor_bw_vars.bw_used[i] >= 0x003F || neighbor_bw_vars.sf_passed[i] >= 0x003F) {
+            if(neighbor_bw_vars.bw_used[i] < neighbor_bw_vars.sf_passed[i])
+               neighbor_bw_vars.bw_used[i] += 1;
+            if(neighbor_bw_vars.bw_used[i] > neighbor_bw_vars.sf_passed[i])
+               neighbor_bw_vars.sf_passed[i] += 1;
             neighbor_bw_vars.bw_used[i] >>= 1;
             neighbor_bw_vars.sf_passed[i] >>= 1;
          }
@@ -906,6 +916,10 @@ void neighbors_notifyBandwidthUsed(open_addr_t* address) {
    if(i < MAXNUMNEIGHBORS) {
       neighbor_bw_vars.bw_used[i] += 1;
       if(neighbor_bw_vars.bw_used[i] >= 0x003F || neighbor_bw_vars.sf_passed[i] >= 0x003F) {
+         if(neighbor_bw_vars.bw_used[i] < neighbor_bw_vars.sf_passed[i])
+            neighbor_bw_vars.bw_used[i] += 1;
+         if(neighbor_bw_vars.bw_used[i] > neighbor_bw_vars.sf_passed[i])
+            neighbor_bw_vars.sf_passed[i] += 1;
          neighbor_bw_vars.bw_used[i] >>= 1;
          neighbor_bw_vars.sf_passed[i] >>= 1;
       }
@@ -929,7 +943,7 @@ uint8_t neighbors_estimatedBandwidth(uint8_t index) {
          else {
             if((txAck << 2) <= tx)
                 return 0;
-            return ((neighbor_bw_vars.bw_used[i] * tx) / (neighbor_bw_vars.sf_passed[i] * txAck)) + 1;
+            return ((neighbor_bw_vars.bw_used[i]) / (neighbor_bw_vars.sf_passed[i])) + 1;
          }
       }
    }

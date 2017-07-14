@@ -25,8 +25,10 @@ typedef struct {
    uint8_t               desireAddr[8];
    uint8_t               backoff;
    bool                  busySendingData;           // TRUE when busy sending a data packet
+   bool                  busySendingRes;            // TRUE when busy sending a response packet
    bool                  waitingRes;
    bool                  askingSelf;
+   bool                  askedNeighbor;
 } ushortid_vars_t;
 
 //=========================== variables =======================================

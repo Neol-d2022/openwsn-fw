@@ -185,6 +185,7 @@ enum {
    COMPONENT_UPROBER                   = 0xa3,
    COMPONENT_URANKER                   = 0xa4,
    COMPONENT_URANKER_RES               = 0xa5,
+   COMPONENT_USHORTID_RES              = 0xa6,
 };
 
 /**
