@@ -944,7 +944,10 @@ void schedule_housekeeping(){
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX || schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
             j = neighbors_addressToIndex(&(schedule_vars.scheduleBuf[i].neighbor));
             if(j >= MAXNUMNEIGHBORS) { // That neighbor has desynchronized
+                ENABLE_INTERRUPTS();
                 schedule_removeActiveSlot(i, &(schedule_vars.scheduleBuf[i].neighbor));
+                INTERRUPT_DECLARATION();
+                DISABLE_INTERRUPTS();
             }
         }
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX){
