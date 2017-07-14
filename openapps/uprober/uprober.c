@@ -7,7 +7,7 @@
 //=========================== defines =========================================
 
 /// inter-packet period (in ms)
-#define UPROBERPERIOD  (8 * SLOTFRAME_LENGTH * 15)
+#define UPROBERPERIOD  (4 * SLOTFRAME_LENGTH * 15)
 
 //=========================== variables =======================================
 
@@ -26,7 +26,7 @@ void uprober_init() {
    	printf("[ERROR] %hu Cannot initialize uprober module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
    	return;
    }
-   opentimers_scheduleIn(uprober_vars.timerId_task, UPROBERPERIOD, TIME_MS, TIMER_PERIODIC, uprober_timer_cb);
+   opentimers_scheduleIn(uprober_vars.timerId_task, UPROBERPERIOD + (openrandom_get16b() % (SLOTFRAME_LENGTH * 15)), TIME_MS, TIMER_PERIODIC, uprober_timer_cb);
 
    // register at UDP stack
    uprober_vars.desc.port              = WKP_UDP_PROBER;
@@ -52,6 +52,9 @@ void uprober_timer_cb(opentimers_id_t id) {
 void uprober_task_cb(void) {
    OpenQueueEntry_t* probe;
    open_addr_t neighbor;
+   
+   // don't run if not synch
+   if (ieee154e_isSynch() == FALSE) return;
    
    if(schedule_getNotUsedTxCell(&neighbor) == 0)
       return;
