@@ -30,7 +30,6 @@ void uantiloop_receive(OpenQueueEntry_t* request) {
    if((senderIndex = neighbors_addressToIndex(&(request->l2_nextORpreviousHop))) < MAXNUMNEIGHBORS) {
       if(icmpv6rpl_getPreferredParentIndex(&parentIndex)) {
          if(senderIndex == parentIndex) {
-            neighbors_setNeighborRank(parentIndex, DEFAULTDAGRANK);
             icmpv6rpl_notify_loopDetected();
          }
       }
