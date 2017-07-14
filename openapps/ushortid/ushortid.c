@@ -43,7 +43,7 @@ void ushortid_init() {
    	return;
    }
    opentimers_scheduleIn(ushortid_vars.timerId_ushortid, USHORTIDPERIOD + (openrandom_get16b() % USHORTIDPERIOD), TIME_MS, TIMER_PERIODIC, ushortid_timer_cb);
-   ushortid_vars.backoff = (openrandom_get16b() & 0x01) + 0x02;
+   ushortid_vars.backoff = (openrandom_get16b() & 0x07) + 0x01;
    
    // register at UDP stack
    ushortid_vars.desc.port              = WKP_UDP_SHORTID;
@@ -103,7 +103,7 @@ void ushortid_timeout_timer_cb(opentimers_id_t id){
       ushortid_vars.askingSelf = FALSE;
       //printf("[INFO] %hhu timed out asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
       memset(ushortid_vars.desireAddr,0,sizeof(ushortid_vars.desireAddr));
-      ushortid_vars.backoff = (openrandom_get16b() & 0x01) + 0x02;
+      ushortid_vars.backoff = (openrandom_get16b() & 0x07) + 0x01;
    }
    opentimers_destroy(id);
 }
@@ -214,7 +214,7 @@ void ushortid_task_cb() {
       openqueue_freePacketBuffer(pkt);
       ushortid_vars.askingSelf = FALSE;
       memset(ushortid_vars.desireAddr,0,sizeof(ushortid_vars.desireAddr));
-      ushortid_vars.backoff = (openrandom_get16b() & 0x07) + 0x08; // ~1min
+      ushortid_vars.backoff = (openrandom_get16b() & 0x07) + 0x01;
       ushortid_vars.busySendingData = FALSE;
       opentimers_destroy(ushortid_vars.timerId_ushortid_timeout);
       return;
@@ -227,7 +227,7 @@ void ushortid_task_cb() {
 void ushortid_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
    ushortid_vars.waitingRes = TRUE;
    ushortid_vars.busySendingData = FALSE;
-   opentimers_scheduleIn(ushortid_vars.timerId_ushortid_timeout, USHORTIDTIMEOUT_BASE + ((icmpv6rpl_getMyDAGrank() >> 8) * SLOTFRAME_LENGTH * 15 * 4), TIME_MS, TIMER_ONESHOT, ushortid_timeout_timer_cb);
+   opentimers_scheduleIn(ushortid_vars.timerId_ushortid_timeout, USHORTIDTIMEOUT_BASE + (((icmpv6rpl_getMyDAGrank() + 255) >> 8) * SLOTFRAME_LENGTH * 15 * 4 * 2), TIME_MS, TIMER_ONESHOT, ushortid_timeout_timer_cb);
    openqueue_freePacketBuffer(msg);
 }
 
