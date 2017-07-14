@@ -188,6 +188,7 @@ void ushortid_task_cb() {
       );
       ushortid_vars.busySendingData = FALSE;
       opentimers_destroy(ushortid_vars.timerId_ushortid_timeout);
+      ushortid_vars.timerId_ushortid_timeout = TOO_MANY_TIMERS_ERROR;
       return;
    }
    // take ownership over that packet
