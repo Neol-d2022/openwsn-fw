@@ -116,8 +116,7 @@ open_addr_t* neighbors_getKANeighbor(uint16_t kaPeriod) {
    uint8_t         i;
    uint16_t        timeSinceHeard;
    
-   // policy is not to KA to non-preferred parents so go strait to check if Preferred Parent is aging
-   if (icmpv6rpl_getPreferredParentIndex(&i)) {      // we have a Parent
+   for (i=0;i<MAXNUMNEIGHBORS;i++){
       if (neighbors_vars.neighbors[i].used==1) {     // that resolves to a neighbor in use (should always)
          timeSinceHeard = ieee154e_asnDiff(&neighbors_vars.neighbors[i].asn);
          if (timeSinceHeard>kaPeriod) {
