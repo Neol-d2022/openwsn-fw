@@ -662,8 +662,8 @@ uint16_t neighbors_getLinkMetric(uint8_t index) {
 void  neighbors_removeOld() {
     uint8_t    i, j;
     bool       haveParent;
-    uint8_t    neighborIndexWithLowestRank[3];
-    dagrank_t  lowestRank;
+    //uint8_t    neighborIndexWithLowestRank[3];
+    //dagrank_t  lowestRank;
     PORT_TIMER_WIDTH timeSinceHeard;
     
     // remove old neighbor
@@ -891,7 +891,7 @@ void neighbors_notifyNewSlotframe(void) {
    for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
       if(neighbors_vars.neighbors[i].used==1) {
          neighbor_bw_vars.sf_passed[i] += 1;
-         if(neighbor_bw_vars.bw_used[i] >= 0x7FFF || neighbor_bw_vars.sf_passed[i] >= 0x7FFF) {
+         if(neighbor_bw_vars.bw_used[i] >= 0x003F || neighbor_bw_vars.sf_passed[i] >= 0x003F) {
             neighbor_bw_vars.bw_used[i] >>= 1;
             neighbor_bw_vars.sf_passed[i] >>= 1;
          }
@@ -905,7 +905,7 @@ void neighbors_notifyBandwidthUsed(open_addr_t* address) {
    i = neighbors_addressToIndex(address);
    if(i < MAXNUMNEIGHBORS) {
       neighbor_bw_vars.bw_used[i] += 1;
-      if(neighbor_bw_vars.bw_used[i] >= 0x7FFF || neighbor_bw_vars.sf_passed[i] >= 0x7FFF) {
+      if(neighbor_bw_vars.bw_used[i] >= 0x003F || neighbor_bw_vars.sf_passed[i] >= 0x003F) {
          neighbor_bw_vars.bw_used[i] >>= 1;
          neighbor_bw_vars.sf_passed[i] >>= 1;
       }
