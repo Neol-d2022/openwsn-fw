@@ -20,7 +20,7 @@
 
 /// inter-packet period (in ms)
 #define USHORTIDPERIOD       4000
-#define USHORTIDTIMEOUT      20000
+#define USHORTIDTIMEOUT_BASE 10000
 
 #define USHORTIDPAYLOADLEN  10
 
@@ -226,7 +226,7 @@ void ushortid_task_cb() {
 void ushortid_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
    ushortid_vars.waitingRes = TRUE;
    ushortid_vars.busySendingData = FALSE;
-   opentimers_scheduleIn(ushortid_vars.timerId_ushortid_timeout, USHORTIDTIMEOUT, TIME_MS, TIMER_ONESHOT, ushortid_timeout_timer_cb);
+   opentimers_scheduleIn(ushortid_vars.timerId_ushortid_timeout, USHORTIDTIMEOUT_BASE + ((icmpv6rpl_getMyDAGrank() >> 8) * SLOTFRAME_LENGTH * 15), TIME_MS, TIMER_ONESHOT, ushortid_timeout_timer_cb);
    openqueue_freePacketBuffer(msg);
 }
 
