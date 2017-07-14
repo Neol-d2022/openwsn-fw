@@ -386,7 +386,7 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
     // (neold2022): Round 1, primary
     if(!foundBetterParent && icmpv6rpl_vars.ParentIndexPrimary != MAXNUMNEIGHBORS) {
         // (neold2022): Primary parent is up
-        printf("[INFO] %hu trying primary.\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+        //printf("[INFO] %hu trying primary.\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
         i = icmpv6rpl_vars.ParentIndexPrimary;
         if (neighbors_isStableNeighborByIndex(i)) { // in use and link is stable
             // neighbor marked as NORES can't be parent
@@ -394,7 +394,7 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
                 neighbors_getStat(i, &tx, &txAck);
                 if(((uint16_t)txAck * 3 < (uint16_t)tx * 1 && tx >= 8) && prevHadParent == TRUE) {
                     //icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
-                    printf("[INFO] %hu refuse to follow routing rule (Primary, bad link).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+                    //printf("[INFO] %hu refuse to follow routing rule (Primary, bad link).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                 }
                 else {
                     // get link cost to this neighbor
@@ -410,22 +410,22 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
                         icmpv6rpl_vars.myDAGrank    = (uint16_t)tentativeDAGrank;
                         icmpv6rpl_vars.ParentIndex  = i;
                         icmpv6rpl_vars.rankIncrease = rankIncrease;
-                        printf("[INFO] %hu accept to follow routing rule (Primary).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+                        //printf("[INFO] %hu accept to follow routing rule (Primary).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                     }
                     else {
                         //icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
-                        printf("[INFO] %hu refuse to follow routing rule (Primary, no parent).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+                        //printf("[INFO] %hu refuse to follow routing rule (Primary, no parent).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                     }
                 }
             }
             else {
                 //icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
-                printf("[INFO] %hu refuse to follow routing rule (Primary, nores).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+                //printf("[INFO] %hu refuse to follow routing rule (Primary, nores).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
             }
         }
         else {
             //icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
-            printf("[INFO] %hu refuse to follow routing rule (Primary, not stable).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+            //printf("[INFO] %hu refuse to follow routing rule (Primary, not stable).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
         }
     }
 
@@ -433,14 +433,14 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
     if(!foundBetterParent && icmpv6rpl_vars.ParentIndexBackup != MAXNUMNEIGHBORS) {
         // (neold2022): Backup parent is up
         i = icmpv6rpl_vars.ParentIndexBackup;
-        printf("[INFO] %hu trying backup.\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+        //printf("[INFO] %hu trying backup.\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
         if (neighbors_isStableNeighborByIndex(i)) { // in use and link is stable
             // neighbor marked as NORES can't be parent
             if (neighbors_getNeighborNoResource(i)==FALSE) {
                 neighbors_getStat(i, &tx, &txAck);
                 if(((uint16_t)txAck * 3 < (uint16_t)tx * 1 && tx >= 8) && prevHadParent == TRUE) {
                     //icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
-                    printf("[INFO] %hu refuse to follow routing rule (Backup, bad link).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+                    //printf("[INFO] %hu refuse to follow routing rule (Backup, bad link).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                 }
                 else {
                     // get link cost to this neighbor
@@ -456,29 +456,29 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
                         icmpv6rpl_vars.myDAGrank    = (uint16_t)tentativeDAGrank;
                         icmpv6rpl_vars.ParentIndex  = i;
                         icmpv6rpl_vars.rankIncrease = rankIncrease;
-                        printf("[INFO] %hu accept to follow routing rule (Backup).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+                        //printf("[INFO] %hu accept to follow routing rule (Backup).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                     }
                     else {
                         //icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
-                        printf("[INFO] %hu refuse to follow routing rule (Backup, no parent).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+                        //printf("[INFO] %hu refuse to follow routing rule (Backup, no parent).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                     }
                 }
             }
             else {
                 //icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
-                printf("[INFO] %hu refuse to follow routing rule (Backup, nores).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+                //printf("[INFO] %hu refuse to follow routing rule (Backup, nores).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
             }
         }
         else {
             //icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
-            printf("[INFO] %hu refuse to follow routing rule (Backup, not stable).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+            //printf("[INFO] %hu refuse to follow routing rule (Backup, not stable).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
         }
     }
 
     // (neold2022): Round 3, RPL
     if(!foundBetterParent) {
         // (neold2022): GW does not assign next hop or they are all down. Use RPL instead.
-        printf("[INFO] %hu running RPL.\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+        //printf("[INFO] %hu running RPL.\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
         // loop through neighbor table, update myDAGrank
         for (i=0;i<MAXNUMNEIGHBORS;i++) {
             if (neighbors_isStableNeighborByIndex(i)) { // in use and link is stable

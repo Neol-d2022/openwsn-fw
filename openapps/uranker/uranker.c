@@ -24,7 +24,7 @@ void uranker_init() {
    
    uranker_vars.timerId_task = opentimers_create();
    if(uranker_vars.timerId_task == TOO_MANY_TIMERS_ERROR) {
-   	printf("[ERROR] %hu Cannot initialize uranker module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+   	//printf("[ERROR] %hu Cannot initialize uranker module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
    	return;
    }
    opentimers_scheduleIn(uranker_vars.timerId_task, URANKERPERIOD + (openrandom_get16b() % (SLOTFRAME_LENGTH * 15)), TIME_MS, TIMER_PERIODIC, uranker_timer_cb);
@@ -51,7 +51,7 @@ void uranker_receive(OpenQueueEntry_t* request) {
          retCode = 0; // Code = Success
          
          hasToReply = 1;
-         printf("[INFO] %hu receive RANKER request packet from %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ((request->l2_nextORpreviousHop).addr_64b)[7]);
+         //printf("[INFO] %hu receive RANKER request packet from %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ((request->l2_nextORpreviousHop).addr_64b)[7]);
       }
       else if(request->payload[0] == 1) {
          // This is a response
@@ -73,7 +73,7 @@ void uranker_receive(OpenQueueEntry_t* request) {
                               uranker_vars.backoff = (openrandom_get16b() & 0x03) + 4;
                            }
                            neighbors_setNeighborRank(i, rank);
-                           printf("[INFO] %hu receive RANKER packet from %hu, rank = %u\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ((request->l2_nextORpreviousHop).addr_64b)[7], (unsigned int)rank);
+                           //printf("[INFO] %hu receive RANKER packet from %hu, rank = %u\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ((request->l2_nextORpreviousHop).addr_64b)[7], (unsigned int)rank);
                         }
                         else {
                            // Not in neighbor table!
@@ -187,7 +187,7 @@ void uranker_sendDone(OpenQueueEntry_t* msg, owerror_t error) {
       uranker_vars.busySendingRes -= 1;
    }
    else {
-      printf("[INFO] %hu Error in uranker sendDone (%d)\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (int)msg->creator);
+      //printf("[INFO] %hu Error in uranker sendDone (%d)\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (int)msg->creator);
    }
    openqueue_freePacketBuffer(msg);
 }
@@ -202,7 +202,7 @@ void uranker_timeout_timer_cb(opentimers_id_t id) {
    uranker_vars.requestedNeighbor.type = ADDR_NONE;
    uranker_vars.timerId_timeout = TOO_MANY_TIMERS_ERROR;
    opentimers_destroy(id);
-   printf("[INFO] %hu time out requesting rank\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+   //printf("[INFO] %hu time out requesting rank\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
 }
 
 void uranker_task_cb(void) {
@@ -243,7 +243,7 @@ void uranker_task_cb(void) {
    
    uranker_vars.timerId_timeout = opentimers_create();
    if(uranker_vars.timerId_timeout == TOO_MANY_TIMERS_ERROR) {
-      printf("[ERROR] %hu Cannot send uranker request: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+      //printf("[ERROR] %hu Cannot send uranker request: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
       return;
    }
    
@@ -272,7 +272,7 @@ void uranker_task_cb(void) {
    packetfunctions_reserveHeaderSize(request, sizeof(uint8_t));
    request->payload[0] = 0; // Type = reuqest
    
-   printf("[INFO] %hu send rank request packet to %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (neighbor.addr_64b)[7]);
+   //printf("[INFO] %hu send rank request packet to %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (neighbor.addr_64b)[7]);
    
    if ((openudp_send(request))==E_FAIL) {
       openqueue_freePacketBuffer(request);

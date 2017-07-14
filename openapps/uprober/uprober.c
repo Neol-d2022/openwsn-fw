@@ -23,7 +23,7 @@ void uprober_init() {
    
    uprober_vars.timerId_task = opentimers_create();
    if(uprober_vars.timerId_task == TOO_MANY_TIMERS_ERROR) {
-   	printf("[ERROR] %hu Cannot initialize uprober module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+   	//printf("[ERROR] %hu Cannot initialize uprober module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
    	return;
    }
    opentimers_scheduleIn(uprober_vars.timerId_task, UPROBERPERIOD + (openrandom_get16b() % (SLOTFRAME_LENGTH * 15)), TIME_MS, TIMER_PERIODIC, uprober_timer_cb);
@@ -36,7 +36,7 @@ void uprober_init() {
 }
 
 void uprober_receive(OpenQueueEntry_t* request) {
-   printf("[INFO] %hu receive prober packet from %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ((request->l2_nextORpreviousHop).addr_64b)[7]);
+   //printf("[INFO] %hu receive prober packet from %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ((request->l2_nextORpreviousHop).addr_64b)[7]);
    openqueue_freePacketBuffer(request);
 }
 
@@ -82,7 +82,7 @@ void uprober_task_cb(void) {
    
    packetfunctions_mac64bToIp128b(idmanager_getMyID(ADDR_PREFIX),&neighbor,&probe->l3_destinationAdd);
    
-   printf("[INFO] %hu send probe packet to %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (neighbor.addr_64b)[7]);
+   //printf("[INFO] %hu send probe packet to %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (neighbor.addr_64b)[7]);
    
    if ((openudp_send(probe))==E_FAIL) {
       openqueue_freePacketBuffer(probe);

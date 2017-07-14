@@ -39,11 +39,11 @@ void ushortid_init() {
    memset(&ushortid_vars,0,sizeof(ushortid_vars));
    ushortid_vars.timerId_ushortid = opentimers_create();
    if(uhurricane_vars.timerId_uhurricane == TOO_MANY_TIMERS_ERROR) {
-   	printf("[ERROR] %hu Cannot initialize ushort module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+   	//printf("[ERROR] %hu Cannot initialize ushort module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
    	return;
    }
    opentimers_scheduleIn(ushortid_vars.timerId_ushortid, USHORTIDPERIOD + (openrandom_get16b() % USHORTIDPERIOD), TIME_MS, TIMER_PERIODIC, ushortid_timer_cb);
-   ushortid_vars.backoff = (openrandom_get16b() & 0x0F) + 0x10; // ~2mins
+   ushortid_vars.backoff = (openrandom_get16b() & 0x01) + 0x02;
    
    // register at UDP stack
    ushortid_vars.desc.port              = WKP_UDP_SHORTID;
@@ -68,7 +68,7 @@ void ushortid_receive(OpenQueueEntry_t* request) {
             sid += ((uint8_t)request->payload[9]) << 0;
             if(ushortid_vars.askingSelf==TRUE) {
                 ushortid_vars.mysid = sid;
-                printf("[INFO] %hhu got reply %hu asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], sid, ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
+                //printf("[INFO] %hhu got reply %hu asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], sid, ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
             }
             else {
                 addr.type = ADDR_64B;
@@ -76,11 +76,11 @@ void ushortid_receive(OpenQueueEntry_t* request) {
                 nidx = neighbors_addressToIndex(&addr);
                 if (nidx < MAXNUMNEIGHBORS) {
                     neighbors_set_ushortid(nidx, sid);
-                    printf("[INFO] %hhu got reply %hu asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], sid, ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
+                    //printf("[INFO] %hhu got reply %hu asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], sid, ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
                 }
                 else {
                     // OOPS, addr is not neighbor nor self addr
-                    printf("[INFO] %hhu got reply %hu but for %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx, asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], sid, request->payload[0], request->payload[1], request->payload[2], request->payload[3], request->payload[4], request->payload[5], request->payload[6], request->payload[7], ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
+                    //printf("[INFO] %hhu got reply %hu but for %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx, asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], sid, request->payload[0], request->payload[1], request->payload[2], request->payload[3], request->payload[4], request->payload[5], request->payload[6], request->payload[7], ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
                 }
             }
             memset(ushortid_vars.desireAddr,0,sizeof(ushortid_vars.desireAddr));
@@ -101,9 +101,9 @@ void ushortid_timeout_timer_cb(opentimers_id_t id){
    if(ushortid_vars.waitingRes==TRUE) {
       ushortid_vars.waitingRes = FALSE; //Query timed out
       ushortid_vars.askingSelf = FALSE;
-      printf("[INFO] %hhu timed out asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
+      //printf("[INFO] %hhu timed out asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
       memset(ushortid_vars.desireAddr,0,sizeof(ushortid_vars.desireAddr));
-      ushortid_vars.backoff = (openrandom_get16b() & 0x07) + 0x08; // ~1min
+      ushortid_vars.backoff = (openrandom_get16b() & 0x01) + 0x02;
    }
    opentimers_destroy(id);
 }
@@ -171,7 +171,7 @@ void ushortid_task_cb() {
    
    ushortid_vars.timerId_ushortid_timeout = opentimers_create();
    if(ushortid_vars.timerId_ushortid_timeout == TOO_MANY_TIMERS_ERROR) {
-   	printf("[ERROR] %hu Cannot send ushort request: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+   	//printf("[ERROR] %hu Cannot send ushort request: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
    	return;
    }
    
@@ -220,7 +220,7 @@ void ushortid_task_cb() {
       return;
    }
 
-   printf("[INFO] %hhu asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
+   //printf("[INFO] %hhu asking for short id of %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ushortid_vars.desireAddr[0], ushortid_vars.desireAddr[1], ushortid_vars.desireAddr[2], ushortid_vars.desireAddr[3], ushortid_vars.desireAddr[4], ushortid_vars.desireAddr[5], ushortid_vars.desireAddr[6], ushortid_vars.desireAddr[7]);
    return;
 }
 

@@ -26,7 +26,7 @@ void uantiloop_init() {
 void uantiloop_receive(OpenQueueEntry_t* request) {
    uint8_t parentIndex, senderIndex;
 
-   printf("[INFO] %hu receive antiloop packet from %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ((request->l2_nextORpreviousHop).addr_64b)[7]);
+   //printf("[INFO] %hu receive antiloop packet from %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], ((request->l2_nextORpreviousHop).addr_64b)[7]);
    if((senderIndex = neighbors_addressToIndex(&(request->l2_nextORpreviousHop))) < MAXNUMNEIGHBORS) {
       if(icmpv6rpl_getPreferredParentIndex(&parentIndex)) {
          if(senderIndex == parentIndex) {
@@ -75,7 +75,7 @@ void uantiloop_loopDetected(open_addr_t* sender) {
    //packetfunctions_reserveHeaderSize(reply,LENGTH_ADDR64b);
    //memcpy(&reply->payload[0],idmanager_getMyID(ADDR_64B),LENGTH_ADDR64b);
    
-   printf("[INFO] %hu send antiloop packet to %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (sender->addr_64b)[7]);
+   //printf("[INFO] %hu send antiloop packet to %hu\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], (sender->addr_64b)[7]);
    
    if ((openudp_send(reply))==E_FAIL) {
       openqueue_freePacketBuffer(reply);

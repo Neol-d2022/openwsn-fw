@@ -32,7 +32,7 @@ uhurricane_vars_t uhurricane_vars;
 void uhurricane_init() {
    uhurricane_vars.timerId_uhurricane = opentimers_create();
    if(uhurricane_vars.timerId_uhurricane == TOO_MANY_TIMERS_ERROR) {
-   	printf("[ERROR] %hu Cannot initialize uhurricane module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+   	//printf("[ERROR] %hu Cannot initialize uhurricane module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
    	return;
    }
    uhurricane_vars.timerId_uhurricane_timeout = TOO_MANY_TIMERS_ERROR;
@@ -54,7 +54,7 @@ void uhurricane_receive(OpenQueueEntry_t* request) {
    else {
       uhurricane_vars.timerId_uhurricane_timeout = opentimers_create();
       if(uhurricane_vars.timerId_uhurricane_timeout == TOO_MANY_TIMERS_ERROR) {
-         printf("[ERROR] %hu Cannot process uhurricane response: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
+         //printf("[ERROR] %hu Cannot process uhurricane response: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
          openqueue_freePacketBuffer(request);
          return;
       }
@@ -65,7 +65,7 @@ void uhurricane_receive(OpenQueueEntry_t* request) {
    else if(request->length==24)
       neighbors_set2parents(&request->payload[8],2);
    
-   printf("[INFO] %hu Received routing rule(%d). Next hop: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], request->length, request->payload[8], request->payload[9], request->payload[10], request->payload[11], request->payload[12], request->payload[13], request->payload[14], request->payload[15]);
+   //printf("[INFO] %hu Received routing rule(%d). Next hop: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], request->length, request->payload[8], request->payload[9], request->payload[10], request->payload[11], request->payload[12], request->payload[13], request->payload[14], request->payload[15]);
    openqueue_freePacketBuffer(request);
    
    opentimers_scheduleIn(uhurricane_vars.timerId_uhurricane_timeout, UHURRICANEPERIOD, TIME_MS, TIMER_ONESHOT, uhurricane_timeout_cb);
@@ -165,7 +165,7 @@ void uhurricane_task_cb() {
       openqueue_freePacketBuffer(pkt);
    }
    else {
-      printf("[INFO] %hu reported %u neighbors\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], neighborLen);
+      //printf("[INFO] %hu reported %u neighbors\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7], neighborLen);
    }
 
    //leds_debug_off();
