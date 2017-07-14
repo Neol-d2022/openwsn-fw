@@ -915,7 +915,7 @@ void neighbors_notifyBandwidthUsed(open_addr_t* address) {
    i = neighbors_addressToIndex(address);
    if(i < MAXNUMNEIGHBORS) {
       neighbor_bw_vars.bw_used[i] += 1;
-      if(neighbor_bw_vars.bw_used[i] >= 0x003F || neighbor_bw_vars.sf_passed[i] >= 0x003F) {
+      if(neighbor_bw_vars.bw_used[i] >= 0x007F || neighbor_bw_vars.sf_passed[i] >= 0x007F) {
          if(neighbor_bw_vars.bw_used[i] < neighbor_bw_vars.sf_passed[i])
             neighbor_bw_vars.bw_used[i] += 1;
          if(neighbor_bw_vars.bw_used[i] > neighbor_bw_vars.sf_passed[i])
@@ -943,7 +943,7 @@ uint8_t neighbors_estimatedBandwidth(uint8_t index) {
          else {
             if((txAck << 2) <= tx)
                 return 0;
-            return ((neighbor_bw_vars.bw_used[i]) / (neighbor_bw_vars.sf_passed[i])) + 1;
+            return ((neighbor_bw_vars.bw_used[i] * tx) / (neighbor_bw_vars.sf_passed[i] * txAck)) + 1;
          }
       }
    }
