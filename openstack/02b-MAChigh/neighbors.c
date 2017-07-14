@@ -913,30 +913,23 @@ void neighbors_notifyBandwidthUsed(open_addr_t* address) {
 }
 
 uint8_t neighbors_estimatedBandwidth(uint8_t index) {
-   double r;
    uint8_t i = index, tx, txAck;
    
    if(i < MAXNUMNEIGHBORS) {
       if(neighbors_vars.neighbors[i].used) {
          neighbors_getStat(i, &tx, &txAck);
-         if((unsigned int)neighbor_bw_vars.sf_passed[i] * txAck == 0) {
+         if(tx >= 16 && txAck == 0) {
+            return 0;
+         }
+         else if((unsigned int)neighbor_bw_vars.sf_passed[i] * txAck == 0) {
             if(neighbors_vars.neighbors[i].parentPreference == 0)
                 return 1;
             else return 1;
          }
          else {
-            r = (double)tx / txAck;
-            r = sqrt(r);
-            if(r > 2.0) {
-                if(tx > 16) {
-                    if(neighbors_vars.neighbors[i].parentPreference == 0)
-                        return 0;
-                    else return 0;
-                }
-                else 
-                    r = 2.0;
-            }
-            return (uint8_t)round(((neighbor_bw_vars.bw_used[i] * r)) / (neighbor_bw_vars.sf_passed[i])) + 1;
+            if((txAck << 2) <= tx)
+                return 0;
+            return ((neighbor_bw_vars.bw_used[i] * tx) / (neighbor_bw_vars.sf_passed[i] * txAck)) + 1;
          }
       }
    }
