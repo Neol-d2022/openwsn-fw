@@ -390,7 +390,7 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
             if (neighbors_getNeighborNoResource(i)==FALSE) {
                 neighbors_getStat(i, &tx, &txAck);
                 if(((uint16_t)txAck * 3 < (uint16_t)tx * 1 && tx >= 8) && prevHadParent == TRUE) {
-                    icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
+                    //icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
                     printf("[INFO] %hu refuse to follow routing rule (Primary, bad link).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                 }
                 else {
@@ -410,18 +410,18 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
                         printf("[INFO] %hu accept to follow routing rule (Primary).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                     }
                     else {
-                        icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
+                        //icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
                         printf("[INFO] %hu refuse to follow routing rule (Primary, no parent).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                     }
                 }
             }
             else {
-                icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
+                //icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
                 printf("[INFO] %hu refuse to follow routing rule (Primary, nores).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
             }
         }
         else {
-            icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
+            //icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
             printf("[INFO] %hu refuse to follow routing rule (Primary, not stable).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
         }
     }
@@ -436,7 +436,7 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
             if (neighbors_getNeighborNoResource(i)==FALSE) {
                 neighbors_getStat(i, &tx, &txAck);
                 if(((uint16_t)txAck * 3 < (uint16_t)tx * 1 && tx >= 8) && prevHadParent == TRUE) {
-                    icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
+                    //icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
                     printf("[INFO] %hu refuse to follow routing rule (Backup, bad link).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                 }
                 else {
@@ -456,18 +456,18 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
                         printf("[INFO] %hu accept to follow routing rule (Backup).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                     }
                     else {
-                        icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
+                        //icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
                         printf("[INFO] %hu refuse to follow routing rule (Backup, no parent).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                     }
                 }
             }
             else {
-                icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
+                //icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
                 printf("[INFO] %hu refuse to follow routing rule (Backup, nores).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
             }
         }
         else {
-            icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
+            //icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
             printf("[INFO] %hu refuse to follow routing rule (Backup, not stable).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
         }
     }
@@ -939,13 +939,30 @@ void icmpv6rpl_setDAOPeriod(uint16_t daoPeriod){
 }
 
 void icmpv6rpl_notify_primaryGone(void) {
+    uint8_t parentIndex;
+    
+    if(icmpv6rpl_getPreferredParentIndex(&parentIndex)) {
+        if(parentIndex == icmpv6rpl_vars.ParentIndexPrimary) {
+            icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
+            icmpv6rpl_updateMyDAGrankAndParentSelection();
+            return;
+        }
+    }
     icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
-    icmpv6rpl_updateMyDAGrankAndParentSelection();
 }
 
 void icmpv6rpl_notify_backupGone(void) {
+    uint8_t parentIndex;
+    
+    if(icmpv6rpl_getPreferredParentIndex(&parentIndex)) {
+        if(parentIndex == icmpv6rpl_vars.ParentIndexBackup) {
+            icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
+            icmpv6rpl_updateMyDAGrankAndParentSelection();
+            return;
+        }
+    }
+    
     icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
-    icmpv6rpl_updateMyDAGrankAndParentSelection();
 }
 
 void icmpv6rpl_notify_primaryAssigned(uint8_t index) {
@@ -965,5 +982,6 @@ void icmpv6rpl_notify_loopDetected(void) {
         neighbors_setPreferredParent(parentIndex, FALSE);
         icmpv6rpl_killPreferredParent();
         neighbors_setNeighborRank(parentIndex, DEFAULTDAGRANK);
+        icmpv6rpl_updateMyDAGrankAndParentSelection();
     }
 }
