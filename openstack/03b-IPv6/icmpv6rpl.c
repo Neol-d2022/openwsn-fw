@@ -564,7 +564,6 @@ The fields which are updated are:
 void icmpv6rpl_indicateRxDIO(OpenQueueEntry_t* msg) {
    uint8_t          i;
    uint8_t          temp_8b;
-   dagrank_t        neighborRank;
    open_addr_t      NeighborAddress;
   
    // take ownership over the packet
@@ -579,19 +578,7 @@ void icmpv6rpl_indicateRxDIO(OpenQueueEntry_t* msg) {
    for (i=0;i<MAXNUMNEIGHBORS;i++) {
       if (neighbors_getNeighborEui64(&NeighborAddress, ADDR_64B, i)) { // this neighbor entry is in use
          if (packetfunctions_sameAddress(&(msg->l2_nextORpreviousHop),&NeighborAddress)) { // matching address
-            neighborRank=neighbors_getNeighborRank(i);
-            if (
-              (icmpv6rpl_vars.incomingDio->rank > neighborRank) &&
-              (icmpv6rpl_vars.incomingDio->rank - neighborRank) > (DEFAULTLINKCOST*2*MINHOPRANKINCREASE)
-            ) {
-               // the new DAGrank looks suspiciously high, only increment a bit
-               neighbors_setNeighborRank(i,neighborRank + (DEFAULTLINKCOST*2*MINHOPRANKINCREASE));
-               openserial_printError(COMPONENT_NEIGHBORS,ERR_LARGE_DAGRANK,
-                               (errorparameter_t)icmpv6rpl_vars.incomingDio->rank,
-                               (errorparameter_t)neighborRank);
-            } else {
-               neighbors_setNeighborRank(i,icmpv6rpl_vars.incomingDio->rank);
-            }
+            neighbors_setNeighborRank(i,icmpv6rpl_vars.incomingDio->rank);
             // since changes were made to neighbors DAG rank, run the routing algorithm again
             icmpv6rpl_updateMyDAGrankAndParentSelection(); 
             break; // there should be only one matching entry, no need to loop further
