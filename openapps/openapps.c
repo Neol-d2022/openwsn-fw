@@ -26,6 +26,7 @@
 #include "uhurricane.h"
 #include "uantiloop.h"
 #include "uprober.h"
+#include "uranker.h"
 
 //=========================== variables =======================================
 
@@ -56,4 +57,5 @@ void openapps_init(void) {
    uhurricane_init();
    uantiloop_init();
    uprober_init();
+   uranker_init();
 }

@@ -100,6 +100,7 @@ enum {
    WKP_UDP_SHORTID                     =   15004,
    WKP_UDP_ANTILOOP                    =   15005,
    WKP_UDP_PROBER                      =   15006,
+   WKP_UDP_RANKER                      =   15007,
 };
 
 //status elements
@@ -182,6 +183,8 @@ enum {
    COMPONENT_UHURRICANE                = 0xa1,
    COMPONENT_UANTILOOP                 = 0xa2,
    COMPONENT_UPROBER                   = 0xa3,
+   COMPONENT_URANKER                   = 0xa4,
+   COMPONENT_URANKER_RES               = 0xa5,
 };
 
 /**

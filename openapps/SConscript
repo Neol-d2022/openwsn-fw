@@ -25,6 +25,7 @@ if localEnv['board']=='python':
         'uhurricane',
         'uantiloop',
         'uprober',
+        'uranker',
     ]
 
 # additional apps the user wants to build
