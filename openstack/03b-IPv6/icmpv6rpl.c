@@ -137,6 +137,9 @@ void icmpv6rpl_init() {
        TIMER_ONESHOT,
        icmpv6rpl_timer_DAO_cb
    );
+   
+   icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
+   icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
 }
 
 void  icmpv6rpl_writeDODAGid(uint8_t* dodagid) {
