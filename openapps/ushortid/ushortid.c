@@ -42,7 +42,7 @@ void ushortid_init() {
    	printf("[ERROR] %hu Cannot initialize ushort module: TOO_MANY_TIMERS_ERROR\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
    	return;
    }
-   opentimers_scheduleIn(ushortid_vars.timerId_ushortid, USHORTIDPERIOD, TIME_MS, TIMER_PERIODIC, ushortid_timer_cb);
+   opentimers_scheduleIn(ushortid_vars.timerId_ushortid, USHORTIDPERIOD + (openrandom_get16b() % USHORTIDPERIOD), TIME_MS, TIMER_PERIODIC, ushortid_timer_cb);
    ushortid_vars.backoff = (openrandom_get16b() & 0x0F) + 0x10; // ~2mins
    
    // register at UDP stack
