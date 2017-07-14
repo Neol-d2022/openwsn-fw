@@ -220,6 +220,10 @@ OpenQueueEntry_t* openqueue_macGetDataPacket(open_addr_t* toNeighbor) {
        ){
           if ((index = neighbors_addressToIndex(&(openqueue_vars.queue[i].l2_nextORpreviousHop))) < MAXNUMNEIGHBORS) {
              txCells = schedule_getNumOfSlotsByTypeAndIndex_dequeue(CELLTYPE_TX, index);
+             if(txCells > 0 && toNeighbor->type==ADDR_ANYCAST) {
+                // We don't send a packet to a neighbor that already has a TX cell on shared cell
+                continue;
+             }
           }
           else {
              txCells = 0;
@@ -283,6 +287,10 @@ OpenQueueEntry_t* openqueue_macGetDataPacket(open_addr_t* toNeighbor) {
             }
             else if ((index = neighbors_addressToIndex(&(openqueue_vars.queue[i].l2_nextORpreviousHop))) < MAXNUMNEIGHBORS) {
                txCells = schedule_getNumOfSlotsByTypeAndIndex_dequeue(CELLTYPE_TX, index);
+               if(txCells > 0) {
+                   // We don't send a packet to a neighbor that already has a TX cell on shared cell
+                   continue;
+               }
             }
             else {
                txCells = 0;
