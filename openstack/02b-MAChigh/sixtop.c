@@ -624,7 +624,6 @@ owerror_t sixtop_send_internal(
     msg->owner  = COMPONENT_SIXTOP_TO_IEEE802154E;
     if((msg->l2_nextORpreviousHop).type == ADDR_64B) {
         neighbors_notifyBandwidthUsed(&(msg->l2_nextORpreviousHop));
-        openqueue_checkBandwidthUsage(&(msg->l2_nextORpreviousHop));
     }
     return E_SUCCESS;
 }

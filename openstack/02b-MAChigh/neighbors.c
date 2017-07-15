@@ -865,6 +865,7 @@ void registerNewNeighbor(open_addr_t* address,
                          uint8_t      joinPrio,
                          bool         insecure) {
    uint8_t  i;
+   uint8_t asn8[5];
    // filter errors
    if (address->type!=ADDR_64B) {
       openserial_printCritical(COMPONENT_NEIGHBORS,ERR_WRONG_ADDR_TYPE,
@@ -891,9 +892,16 @@ void registerNewNeighbor(open_addr_t* address,
             neighbors_vars.neighbors[i].numRx                  = 1;
             neighbors_vars.neighbors[i].numTx                  = 0;
             neighbors_vars.neighbors[i].numTxACK               = 0;
-	    neighbors_shortid_vars.neighborsId[i]              = 0;
-	    neighbor_bw_vars.bw_used[i]                        = 0;
-	    neighbor_bw_vars.sf_passed[i]                      = 0;
+            neighbors_shortid_vars.neighborsId[i]              = 0;
+            neighbor_bw_vars.bw_used[i]                        = 0;
+            neighbor_bw_vars.sf_passed[i]                      = 0;
+            neighbor_bw_vars.bw_current[i]                     = 0;
+            neighbor_bw_vars.bw_peak[i]                        = 0;
+            neighbor_bw_vars.tx_period[i]                      = 0;
+            ieee154e_getAsn(asn8);
+            neighbor_bw_vars.lastTX[i].bytes0and1              = asn8[0] + asn8[1] * 256;
+            neighbor_bw_vars.lastTX[i].bytes2and3              = asn8[2] + asn8[3] * 256;
+            neighbor_bw_vars.lastTX[i].byte4                   = asn8[4];
             memcpy(&neighbors_vars.neighbors[i].asn,asnTimestamp,sizeof(asn_t));
             //update jp
             if (joinPrioPresent==TRUE){
@@ -964,6 +972,9 @@ void neighbors_notifyNewSlotframe(void) {
    for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
       if(neighbors_vars.neighbors[i].used==1) {
          neighbor_bw_vars.sf_passed[i] += 1;
+         if(neighbor_bw_vars.bw_current[i] > neighbor_bw_vars.bw_peak[i])
+            neighbor_bw_vars.bw_peak[i] = neighbor_bw_vars.bw_current[i];
+         neighbor_bw_vars.bw_current[i] = 0;
          if(neighbor_bw_vars.bw_used[i] >= 0x003F || neighbor_bw_vars.sf_passed[i] >= 0x003F) {
             if(neighbor_bw_vars.bw_used[i] < neighbor_bw_vars.sf_passed[i])
                neighbor_bw_vars.bw_used[i] += 1;
@@ -971,6 +982,7 @@ void neighbors_notifyNewSlotframe(void) {
                neighbor_bw_vars.sf_passed[i] += 1;
             neighbor_bw_vars.bw_used[i] >>= 1;
             neighbor_bw_vars.sf_passed[i] >>= 1;
+            neighbor_bw_vars.tx_period[i] >>= 1;
          }
       }
    }
@@ -978,10 +990,14 @@ void neighbors_notifyNewSlotframe(void) {
 
 void neighbors_notifyBandwidthUsed(open_addr_t* address) {
    uint8_t i;
+   uint16_t asnDiff;
    
    i = neighbors_addressToIndex(address);
    if(i < MAXNUMNEIGHBORS) {
       neighbor_bw_vars.bw_used[i] += 1;
+      neighbor_bw_vars.bw_current[i] += 1;
+      asnDiff = ieee154e_asnDiff(&(neighbor_bw_vars.lastTX[i]));
+      neighbor_bw_vars.tx_period[i] += asnDiff;
       if(neighbor_bw_vars.bw_used[i] >= 0x007F || neighbor_bw_vars.sf_passed[i] >= 0x007F) {
          if(neighbor_bw_vars.bw_used[i] < neighbor_bw_vars.sf_passed[i])
             neighbor_bw_vars.bw_used[i] += 1;
@@ -989,6 +1005,7 @@ void neighbors_notifyBandwidthUsed(open_addr_t* address) {
             neighbor_bw_vars.sf_passed[i] += 1;
          neighbor_bw_vars.bw_used[i] >>= 1;
          neighbor_bw_vars.sf_passed[i] >>= 1;
+         neighbor_bw_vars.tx_period[i] >>= 1;
       }
    }
 }
@@ -1016,4 +1033,17 @@ uint8_t neighbors_estimatedBandwidth(uint8_t index) {
    }
    
    return 255;
+}
+
+bool neighbors_getBandwidthStats(uint16_t *used, uint16_t *sfpassed, uint16_t *bwcurrent, uint16_t *bwpeak, uint16_t *txperiod, uint8_t index) {
+   if(index < MAXNUMNEIGHBORS) {
+      *used      = neighbor_bw_vars.bw_used[index];
+      *sfpassed  = neighbor_bw_vars.sf_passed[index];
+      *bwcurrent = neighbor_bw_vars.bw_current[index];
+      *bwpeak    = neighbor_bw_vars.bw_peak[index];
+      *txperiod  = neighbor_bw_vars.tx_period[index];
+      return neighbors_vars.neighbors[index].used;
+   }
+   else
+      return FALSE;
 }

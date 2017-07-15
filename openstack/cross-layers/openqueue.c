@@ -346,33 +346,6 @@ OpenQueueEntry_t* openqueue_macGetEBPacket() {
    return NULL;
 }
 
-// called by sixtop
-void openqueue_checkBandwidthUsage(open_addr_t *toNeighbor) {
-   uint8_t index, queued, i, j;
-
-   INTERRUPT_DECLARATION();
-   DISABLE_INTERRUPTS();
-   
-   queued = 0;
-   index = neighbors_addressToIndex(toNeighbor);
-   if(index < MAXNUMNEIGHBORS) {
-      for (i=0;i<QUEUELENGTH;i++) {
-         if (openqueue_vars.queue[i].owner==COMPONENT_SIXTOP_TO_IEEE802154E &&
-            packetfunctions_sameAddress(toNeighbor,&openqueue_vars.queue[i].l2_nextORpreviousHop)
-          ) {
-            queued += 1;
-         }
-      }
-      if(queued > 0) {
-         for (j=1;j<queued;j++) {
-            neighbors_notifyBandwidthUsed(toNeighbor);
-         }
-      }
-   }
-   
-   ENABLE_INTERRUPTS();
-}
-
 //=========================== private =========================================
 
 void openqueue_reset_entry(OpenQueueEntry_t* entry) {
