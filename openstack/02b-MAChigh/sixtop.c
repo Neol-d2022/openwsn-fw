@@ -622,7 +622,7 @@ owerror_t sixtop_send_internal(
     );
     // change owner to IEEE802154E fetches it from queue
     msg->owner  = COMPONENT_SIXTOP_TO_IEEE802154E;
-    if((msg->l2_nextORpreviousHop).type == ADDR_64B) {
+    if((msg->l2_nextORpreviousHop).type == ADDR_64B && msg->creator != COMPONENT_SIXTOP && msg->creator != COMPONENT_SIXTOP_RES && msg->creator != COMPONENT_UPROBER) {
         neighbors_notifyBandwidthUsed(&(msg->l2_nextORpreviousHop));
     }
     return E_SUCCESS;

@@ -11,7 +11,7 @@
 //=========================== definition =====================================
 
 #define SF0_ID            0
-#define SF0THRESHOLD      2
+#define SF0THRESHOLD      1
 
 //=========================== variables =======================================
 
@@ -182,6 +182,7 @@ void sf0_bandwidthEstimate_2_task(void){
     int8_t         bw_estimated, _estimated;
     int8_t         maxDiff, _diff;
     uint8_t        i;
+    uint16_t       used, sfpassed, bwcurrent, bwpeak, txperiod, txuage, lastTxAsnDiff;
     cellInfo_ht    celllist_add[CELLLIST_MAX_LEN];
     cellInfo_ht    celllist_delete[CELLLIST_MAX_LEN];
     
@@ -196,22 +197,32 @@ void sf0_bandwidthEstimate_2_task(void){
         return;
     }
     
+    if((idmanager_getMyID(ADDR_64B)->addr_64b)[7] == 1)
+       printf("[DEBUG] %2hhu report bandwidth usage:\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
     if(foundNeighbor==FALSE) {
        maxDiff = -1;
        for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
-          //if(parent_i == i) continue;
-          _estimated = neighbors_estimatedBandwidth(i);
-          if(_estimated == 255) continue;
+          if(neighbors_getBandwidthStats(&used, &sfpassed, &bwcurrent, &bwpeak, &txperiod, &txuage, &lastTxAsnDiff, i) == FALSE)
+             continue;
+          
           if(neighbors_getGenerationByIndex(i) > 8) continue;
+          
+          _estimated = neighbors_estimatedBandwidth(i); // AVG
           _actual = schedule_getNumOfSlotsByTypeAndIndex(CELLTYPE_TX, i);
-          /*if(_actual == 0) {
-             bw_actual = _actual;
-             bw_estimated = _estimated;
-             neighbors_getNeighborEui64(&neighbor, ADDR_64B, i);
-             foundNeighbor = TRUE;
-             break;
-          }*/
+          
+          if((idmanager_getMyID(ADDR_64B)->addr_64b)[7] == 1)
+             printf("\t%2hhu: U=%2hu, C=%2hu, P=%2hu, T=%5hu/%3hu (~%4hu), S=%5hu, AT=%4hu\n", i, used, bwcurrent, bwpeak, txperiod, txuage, lastTxAsnDiff, sfpassed, (((txperiod + 1) / (txuage + 1)) + lastTxAsnDiff) >> 1);
+          
+          if(bwpeak > _estimated + 1)
+             _estimated = bwpeak;
+          
+          if(((((txperiod + 1) / (txuage + 1)) + lastTxAsnDiff) >> 1) > SLOTFRAME_LENGTH * 16 && bwpeak == 0)
+             _estimated = 1;
+          
           _diff = _actual - _estimated;
+          if(bwpeak > _estimated && _diff < 0)
+             _diff = 0;
+          
           if(_diff < 0) _diff *= -1;
           if(_diff > maxDiff || (_diff <= maxDiff && bw_actual > bw_estimated && _actual < _estimated)) {
              bw_actual = _actual;
@@ -222,11 +233,13 @@ void sf0_bandwidthEstimate_2_task(void){
           }
        }
     }
+    if((idmanager_getMyID(ADDR_64B)->addr_64b)[7] == 1)
+       printf("\n");
     
     if(foundNeighbor == FALSE) goto sf0_bandwidthEstimate_2_task_exit;
     
     if (bw_actual < bw_estimated){
-    	if (sf0_candidateAddCellList(celllist_add,bw_estimated-bw_actual)==FALSE){
+    	if (sf0_candidateAddCellList(celllist_add,1)==FALSE){
             // failed to get cell list to add
             return;
         }
@@ -237,7 +250,7 @@ void sf0_bandwidthEstimate_2_task(void){
         sixtop_request(
             IANA_6TOP_CMD_ADD,                  // code
             &neighbor,                          // neighbor
-            bw_estimated-bw_actual,   // number cells
+            1,                                  // number cells
             LINKOPTIONS_TX,                     // cellOptions
             celllist_add,                       // celllist to add
             NULL,                               // celllist to delete

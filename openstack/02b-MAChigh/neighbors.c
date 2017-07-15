@@ -898,6 +898,7 @@ void registerNewNeighbor(open_addr_t* address,
             neighbor_bw_vars.bw_current[i]                     = 0;
             neighbor_bw_vars.bw_peak[i]                        = 0;
             neighbor_bw_vars.tx_period[i]                      = 0;
+            neighbor_bw_vars.tx_usage[i]                       = 0;
             ieee154e_getAsn(asn8);
             neighbor_bw_vars.lastTX[i].bytes0and1              = asn8[0] + asn8[1] * 256;
             neighbor_bw_vars.lastTX[i].bytes2and3              = asn8[2] + asn8[3] * 256;
@@ -972,16 +973,30 @@ void neighbors_notifyNewSlotframe(void) {
    for(i = 0; i < MAXNUMNEIGHBORS; i += 1) {
       if(neighbors_vars.neighbors[i].used==1) {
          neighbor_bw_vars.sf_passed[i] += 1;
+         
          if(neighbor_bw_vars.bw_current[i] > neighbor_bw_vars.bw_peak[i])
             neighbor_bw_vars.bw_peak[i] = neighbor_bw_vars.bw_current[i];
+         
          neighbor_bw_vars.bw_current[i] = 0;
+         
          if(neighbor_bw_vars.bw_used[i] >= 0x003F || neighbor_bw_vars.sf_passed[i] >= 0x003F) {
+         
             if(neighbor_bw_vars.bw_used[i] < neighbor_bw_vars.sf_passed[i])
                neighbor_bw_vars.bw_used[i] += 1;
+            
             if(neighbor_bw_vars.bw_used[i] > neighbor_bw_vars.sf_passed[i])
                neighbor_bw_vars.sf_passed[i] += 1;
+               
             neighbor_bw_vars.bw_used[i] >>= 1;
             neighbor_bw_vars.sf_passed[i] >>= 1;
+            neighbor_bw_vars.tx_period[i] >>= 1;
+            
+            if(neighbor_bw_vars.bw_peak[i] > 0)
+               neighbor_bw_vars.bw_peak[i] -= 1;
+         }
+         
+         if(neighbor_bw_vars.tx_usage[i] >= 0x003F || neighbor_bw_vars.tx_period[i] >= 0x3F00) {
+            neighbor_bw_vars.tx_usage[i] >>= 1;
             neighbor_bw_vars.tx_period[i] >>= 1;
          }
       }
@@ -991,20 +1006,40 @@ void neighbors_notifyNewSlotframe(void) {
 void neighbors_notifyBandwidthUsed(open_addr_t* address) {
    uint8_t i;
    uint16_t asnDiff;
+   uint8_t asn8[5];
    
    i = neighbors_addressToIndex(address);
    if(i < MAXNUMNEIGHBORS) {
       neighbor_bw_vars.bw_used[i] += 1;
-      neighbor_bw_vars.bw_current[i] += 1;
+      
       asnDiff = ieee154e_asnDiff(&(neighbor_bw_vars.lastTX[i]));
       neighbor_bw_vars.tx_period[i] += asnDiff;
-      if(neighbor_bw_vars.bw_used[i] >= 0x007F || neighbor_bw_vars.sf_passed[i] >= 0x007F) {
+      ieee154e_getAsn(asn8);
+      neighbor_bw_vars.lastTX[i].bytes0and1 = asn8[0] + asn8[1] * 256;
+      neighbor_bw_vars.lastTX[i].bytes2and3 = asn8[2] + asn8[3] * 256;
+      neighbor_bw_vars.lastTX[i].byte4      = asn8[4];
+      neighbor_bw_vars.tx_usage[i] += 1;
+      
+      neighbor_bw_vars.bw_current[i] += 1;
+      
+      if(neighbor_bw_vars.bw_used[i] >= 0x003F || neighbor_bw_vars.sf_passed[i] >= 0x003F) {
+      
          if(neighbor_bw_vars.bw_used[i] < neighbor_bw_vars.sf_passed[i])
             neighbor_bw_vars.bw_used[i] += 1;
+            
          if(neighbor_bw_vars.bw_used[i] > neighbor_bw_vars.sf_passed[i])
             neighbor_bw_vars.sf_passed[i] += 1;
+            
          neighbor_bw_vars.bw_used[i] >>= 1;
          neighbor_bw_vars.sf_passed[i] >>= 1;
+         neighbor_bw_vars.tx_period[i] >>= 1;
+         
+         if(neighbor_bw_vars.bw_peak[i] > 0)
+            neighbor_bw_vars.bw_peak[i] -= 1;
+      }
+      
+      if(neighbor_bw_vars.tx_usage[i] >= 0x003F || neighbor_bw_vars.tx_period[i] >= 0x3F00) {
+         neighbor_bw_vars.tx_usage[i] >>= 1;
          neighbor_bw_vars.tx_period[i] >>= 1;
       }
    }
@@ -1035,13 +1070,15 @@ uint8_t neighbors_estimatedBandwidth(uint8_t index) {
    return 255;
 }
 
-bool neighbors_getBandwidthStats(uint16_t *used, uint16_t *sfpassed, uint16_t *bwcurrent, uint16_t *bwpeak, uint16_t *txperiod, uint8_t index) {
+bool neighbors_getBandwidthStats(uint16_t *used, uint16_t *sfpassed, uint16_t *bwcurrent, uint16_t *bwpeak, uint16_t *txperiod, uint16_t *txusage, uint16_t *lastTxAsnDiff, uint8_t index) {
    if(index < MAXNUMNEIGHBORS) {
-      *used      = neighbor_bw_vars.bw_used[index];
-      *sfpassed  = neighbor_bw_vars.sf_passed[index];
-      *bwcurrent = neighbor_bw_vars.bw_current[index];
-      *bwpeak    = neighbor_bw_vars.bw_peak[index];
-      *txperiod  = neighbor_bw_vars.tx_period[index];
+      if(used!=NULL)          *used          = neighbor_bw_vars.bw_used[index];
+      if(sfpassed!=NULL)      *sfpassed      = neighbor_bw_vars.sf_passed[index];
+      if(bwcurrent!=NULL)     *bwcurrent     = neighbor_bw_vars.bw_current[index];
+      if(bwpeak!=NULL)        *bwpeak        = neighbor_bw_vars.bw_peak[index];
+      if(txperiod!=NULL)      *txperiod      = neighbor_bw_vars.tx_period[index];
+      if(txusage!=NULL)       *txusage       = neighbor_bw_vars.tx_usage[index];
+      if(lastTxAsnDiff!=NULL) *lastTxAsnDiff = ieee154e_asnDiff(&(neighbor_bw_vars.lastTX[index]));
       return neighbors_vars.neighbors[index].used;
    }
    else

@@ -70,6 +70,7 @@ typedef struct {
    uint16_t bw_current[MAXNUMNEIGHBORS];
    uint16_t bw_peak[MAXNUMNEIGHBORS];
    uint16_t tx_period[MAXNUMNEIGHBORS];
+   uint16_t tx_usage[MAXNUMNEIGHBORS];
    asn_t    lastTX[MAXNUMNEIGHBORS];
 } neighbor_bw_vars_t;
 
@@ -90,7 +91,7 @@ bool          neighbors_getNeighborNoResource(uint8_t index);
 uint8_t       neighbors_getGeneration(open_addr_t* address);
 uint8_t       neighbors_getGenerationByIndex(uint8_t index);
 uint8_t       neighbors_getSequenceNumber(open_addr_t* address);
-bool          neighbors_getBandwidthStats(uint16_t *used, uint16_t *sfpassed, uint16_t *bwcurrent, uint16_t *bwpeak, uint16_t *txperiod, uint8_t index);
+bool          neighbors_getBandwidthStats(uint16_t *used, uint16_t *sfpassed, uint16_t *bwcurrent, uint16_t *bwpeak, uint16_t *txperiod, uint16_t *txusage, uint16_t *lastTxAsnDiff, uint8_t index);
 // setters
 void          neighbors_setNeighborRank(uint8_t index, dagrank_t rank);
 void          neighbors_setNeighborNoResource(open_addr_t* address);
