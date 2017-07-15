@@ -43,6 +43,7 @@ void icmpv6rpl_init() {
    
    //=== routing
    icmpv6rpl_vars.haveParent=FALSE;
+   icmpv6rpl_vars.daoSent=FALSE;
    if (idmanager_getIsDAGroot()==TRUE) {
       icmpv6rpl_vars.myDAGrank=MINHOPRANKINCREASE;
    } else {
@@ -164,8 +165,12 @@ uint8_t icmpv6rpl_getRPLIntanceID(){
    return icmpv6rpl_vars.dao.rplinstanceId;
 }
                                                 
-void    icmpv6rpl_getRPLDODAGid(uint8_t* address_128b){
-    memcpy(address_128b,icmpv6rpl_vars.dao.DODAGID,16);
+owerror_t icmpv6rpl_getRPLDODAGid(uint8_t* address_128b){
+   if (icmpv6rpl_vars.fDodagidWritten) {
+       memcpy(address_128b,icmpv6rpl_vars.dao.DODAGID,16);
+       return E_SUCCESS;
+   }
+   return E_FAIL;
 }
 
 /**
@@ -913,6 +918,7 @@ void sendDAO() {
    //===== send
    if (icmpv6_send(msg)==E_SUCCESS) {
       icmpv6rpl_vars.busySendingDAO = TRUE;
+      icmpv6rpl_vars.daoSent = TRUE;
    } else {
       openqueue_freePacketBuffer(msg);
    }
@@ -963,6 +969,13 @@ void icmpv6rpl_notify_primaryAssigned(uint8_t index) {
 void icmpv6rpl_notify_backupAssigned(uint8_t index) {
     icmpv6rpl_vars.ParentIndexBackup = index;
     icmpv6rpl_updateMyDAGrankAndParentSelection();
+}
+
+bool icmpv6rpl_daoSent(void) {
+    if (idmanager_getIsDAGroot()==TRUE) {
+        return TRUE;
+    }
+    return icmpv6rpl_vars.daoSent;
 }
 
 void icmpv6rpl_notify_loopDetected(void) {
