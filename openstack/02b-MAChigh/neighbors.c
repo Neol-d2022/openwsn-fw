@@ -852,6 +852,8 @@ bool debugPrint_neighbors() {
    neighbors_vars.debugRow=(neighbors_vars.debugRow+1)%MAXNUMNEIGHBORS;
    temp.row=neighbors_vars.debugRow;
    temp.neighborEntry=neighbors_vars.neighbors[neighbors_vars.debugRow];
+   temp.bw_used=neighbor_bw_vars.bw_used[neighbors_vars.debugRow];
+   temp.sf_passed=neighbor_bw_vars.sf_passed[neighbors_vars.debugRow];
    openserial_printStatus(STATUS_NEIGHBORS,(uint8_t*)&temp,sizeof(debugNeighborEntry_t));
    return TRUE;
 }

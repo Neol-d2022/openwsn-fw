@@ -29,6 +29,8 @@ BEGIN_PACK
 typedef struct {
    uint8_t         row;
    neighborRow_t   neighborEntry;
+   uint16_t        bw_used;
+   uint16_t        sf_passed;
 } debugNeighborEntry_t;
 END_PACK
 
