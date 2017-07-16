@@ -397,7 +397,7 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
             // neighbor marked as NORES can't be parent
             if (neighbors_getNeighborNoResource(i)==FALSE) {
                 neighbors_getStat(i, &tx, &txAck);
-                if(((uint16_t)txAck * 3 < (uint16_t)tx * 1 && tx >= 8) && prevHadParent == TRUE) {
+                if(((uint16_t)txAck * 2 <= (uint16_t)tx && tx >= 16) && prevHadParent == TRUE) {
                     //icmpv6rpl_vars.ParentIndexPrimary = MAXNUMNEIGHBORS;
                     //printf("[INFO] %hu refuse to follow routing rule (Primary, bad link).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                 }
@@ -443,7 +443,7 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
             // neighbor marked as NORES can't be parent
             if (neighbors_getNeighborNoResource(i)==FALSE) {
                 neighbors_getStat(i, &tx, &txAck);
-                if(((uint16_t)txAck * 3 < (uint16_t)tx * 1 && tx >= 8) && prevHadParent == TRUE) {
+                if(((uint16_t)txAck * 2 <= (uint16_t)tx && tx >= 16) && prevHadParent == TRUE) {
                     //icmpv6rpl_vars.ParentIndexBackup = MAXNUMNEIGHBORS;
                     //printf("[INFO] %hu refuse to follow routing rule (Backup, bad link).\n", (idmanager_getMyID(ADDR_64B)->addr_64b)[7]);
                 }
@@ -492,7 +492,7 @@ void icmpv6rpl_updateMyDAGrankAndParentSelection() {
                     continue;
                 }
                 neighbors_getStat(i, &tx, &txAck);
-                if(((uint16_t)txAck * 3 < (uint16_t)tx * 1 && tx >= 8) && prevHadParent == TRUE) {
+                if(((uint16_t)txAck * 2 <= (uint16_t)tx && tx >= 16) && prevHadParent == TRUE) {
                     continue;
                 }
                 // get link cost to this neighbor

@@ -731,12 +731,13 @@ uint16_t neighbors_getLinkMetric(uint8_t index) {
 //===== maintenance
 
 void  neighbors_removeOld() {
-    uint8_t    i, j;
+    uint8_t    i, j, tx, txAck, _6pRequest;
     bool       haveParent;
     //uint8_t    neighborIndexWithLowestRank[3];
     //dagrank_t  lowestRank;
     PORT_TIMER_WIDTH timeSinceHeard;
     
+    _6pRequest = 0;
     // remove old neighbor
     for (i=0;i<MAXNUMNEIGHBORS;i++) {
         if (neighbors_vars.neighbors[i].used==1) {
@@ -749,6 +750,30 @@ void  neighbors_removeOld() {
                     icmpv6rpl_updateMyDAGrankAndParentSelection();
                 } else {
                     removeNeighbor(i);
+                }
+            }
+            if(_6pRequest > 0)
+                continue;
+
+            neighbors_getStat(i, &tx, &txAck);
+            if((uint16_t)txAck * 2 <= (uint16_t)tx && tx >= 16) {
+                if(schedule_getNumOfSlotsByTypeAndIndex(CELLTYPE_TX, i) > 0) {
+                    _6pRequest = 1;
+                    if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
+                       // one sixtop transcation is happening, only one instance at one time
+                       continue;
+                    }
+                    sixtop_request(
+                       IANA_6TOP_CMD_CLEAR,                             // code
+                       &(neighbors_vars.neighbors[i].addr_64b),         // neighbor
+                       0,                                               // numCells (not used)
+                       LINKOPTIONS_TX,                                  // cellOptions
+                       NULL,                                            // celllist to add (not used)
+                       NULL,                                            // celllist to add (not used)
+                       sf0_getsfid(),                                   // sfid
+                       0,                                               // list command offset (not used)
+                       0                                                // list command maximum list of cells(not used)
+                    );
                 }
             }
         }
@@ -1027,7 +1052,7 @@ uint8_t neighbors_estimatedBandwidth(uint8_t index) {
             else return 1;
          }
          else {
-            if((txAck << 2) <= tx)
+            if((txAck << 1) <= tx && tx >= 16)
                 return 0;
             return ((neighbor_bw_vars.bw_used[i] * tx) / (neighbor_bw_vars.sf_passed[i] * txAck)) + 1;
          }
