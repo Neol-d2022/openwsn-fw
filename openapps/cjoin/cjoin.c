@@ -56,6 +56,9 @@ void        cjoin_setIsJoined(bool newValue);
 //=========================== public ==========================================
 
 void cjoin_init() {
+   // declare the usage of dynamic keying to L2 security module
+   IEEE802154_security_setDynamicKeying();
+
    // prepare the resource descriptor for the /j path
    cjoin_vars.desc.path0len                        = sizeof(cjoin_path0)-1;
    cjoin_vars.desc.path0val                        = (uint8_t*)(&cjoin_path0);
@@ -74,7 +77,6 @@ void cjoin_init() {
    cjoin_vars.timerId = opentimers_create();
 
    idmanager_setJoinKey((uint8_t *) masterSecret);
-   cjoin_init_security_context();
 
    cjoin_schedule();
 }
@@ -191,6 +193,10 @@ void cjoin_task_cb() {
     
     // cancel the startup timer but do not destroy it as we reuse it for retransmissions
     opentimers_cancel(cjoin_vars.timerId);
+
+    // init the security context only here in order to use the latest joinKey
+    // that may be set over the serial
+    cjoin_init_security_context();
 
     cjoin_sendJoinRequest(joinProxy);
 

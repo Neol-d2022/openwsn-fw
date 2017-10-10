@@ -108,7 +108,6 @@ void sixtop_init() {
     sixtop_vars.kaPeriod           = MAXKAPERIOD;
     sixtop_vars.ebPeriod           = EBPERIOD;
     sixtop_vars.isResponseEnabled  = TRUE;
-    sixtop_vars.handler            = SIX_HANDLER_NONE;
     sixtop_vars.six2six_state      = SIX_STATE_IDLE;
     
     sixtop_vars.ebSendingTimerId   = opentimers_create();
@@ -147,20 +146,6 @@ void sixtop_setEBPeriod(uint8_t ebPeriod) {
     }
 }
 
-bool sixtop_setHandler(six2six_handler_t handler) {
-    if (
-        sixtop_vars.handler       == SIX_HANDLER_NONE &&
-        sixtop_vars.six2six_state == SIX_STATE_IDLE
-    ){
-        sixtop_vars.handler = handler;
-        return TRUE;
-    } else {
-        // another handler is using sixtop
-        return FALSE;
-        
-    }
-}
-
 void  sixtop_setSFcallback(
     sixtop_sf_getsfid_cbt           cb0,
     sixtop_sf_getmetadata_cbt       cb1, 
@@ -175,7 +160,7 @@ void  sixtop_setSFcallback(
 
 //======= scheduling
 
-void sixtop_request(
+owerror_t sixtop_request(
     uint8_t      code, 
     open_addr_t* neighbor, 
     uint8_t      numCells, 
@@ -192,16 +177,15 @@ void sixtop_request(
     uint16_t          length_groupid_type;
     uint8_t           scheduleGeneration;
     uint8_t           sequenceNumber;
+    owerror_t         outcome;
    
     // filter parameters: handler, status and neighbor
     if(
-        sixtop_vars.handler       == SIX_HANDLER_NONE ||
         sixtop_vars.six2six_state != SIX_STATE_IDLE   ||
         neighbor                  == NULL
     ){
-        // parameters are wrong
-        // DONOT change sixtop status for the new transaction
-        return;
+        // neighbor can't be none or previous transcation doesn't finishe yet
+        return E_FAIL;
     }
    
     if(sixtop_vars.busySending6top >= 2) {
@@ -211,18 +195,14 @@ void sixtop_request(
     // get a free packet buffer
     pkt = openqueue_getFreePacketBuffer(COMPONENT_SIXTOP_RES);
     if (pkt==NULL) {
-        sixtop_vars.handler = SIX_HANDLER_NONE;
         openserial_printError(
             COMPONENT_SIXTOP_RES,
             ERR_NO_FREE_PACKET_BUFFER,
             (errorparameter_t)0,
             (errorparameter_t)0
         );
-        return;
+        return E_FAIL;
     }
-   
-    // update state
-    sixtop_vars.six2six_state  = SIX_STATE_SENDING_REQUEST;
    
     // take ownership
     pkt->creator = COMPONENT_SIXTOP_RES;
@@ -342,32 +322,37 @@ void sixtop_request(
     // record this packet as sixtop request message
     pkt->l2_sixtop_messageType    = SIXTOP_CELL_REQUEST;
     
-    //update states
-    switch(code){
-    case IANA_6TOP_CMD_ADD:
-        sixtop_vars.six2six_state = SIX_STATE_WAIT_ADDREQUEST_SENDDONE;
-        break;
-    case IANA_6TOP_CMD_DELETE:
-        sixtop_vars.six2six_state = SIX_STATE_WAIT_DELETEREQUEST_SENDDONE;
-        break;
-    case IANA_6TOP_CMD_RELOCATE:
-        sixtop_vars.six2six_state = SIX_STATE_WAIT_RELOCATEREQUEST_SENDDONE;
-        break;
-    case IANA_6TOP_CMD_COUNT:
-        sixtop_vars.six2six_state = SIX_STATE_WAIT_COUNTREQUEST_SENDDONE;
-        break;
-    case IANA_6TOP_CMD_LIST:
-        sixtop_vars.six2six_state = SIX_STATE_WAIT_LISTREQUEST_SENDDONE;
-        break;
-    case IANA_6TOP_CMD_CLEAR:
-        sixtop_vars.six2six_state = SIX_STATE_WAIT_CLEARREQUEST_SENDDONE;
-        break;
-    }
-    
     // send packet
     sixtop_vars.busySending6top += 1;
-    sixtop_send(pkt);
-    neighbors_updateSequenceNumber(neighbor);
+    outcome = sixtop_send(pkt);
+    
+    if (outcome == E_SUCCESS){
+        neighbors_updateSequenceNumber(neighbor);
+        //update states
+        switch(code){
+        case IANA_6TOP_CMD_ADD:
+            sixtop_vars.six2six_state = SIX_STATE_WAIT_ADDREQUEST_SENDDONE;
+            break;
+        case IANA_6TOP_CMD_DELETE:
+            sixtop_vars.six2six_state = SIX_STATE_WAIT_DELETEREQUEST_SENDDONE;
+            break;
+        case IANA_6TOP_CMD_RELOCATE:
+            sixtop_vars.six2six_state = SIX_STATE_WAIT_RELOCATEREQUEST_SENDDONE;
+            break;
+        case IANA_6TOP_CMD_COUNT:
+            sixtop_vars.six2six_state = SIX_STATE_WAIT_COUNTREQUEST_SENDDONE;
+            break;
+        case IANA_6TOP_CMD_LIST:
+            sixtop_vars.six2six_state = SIX_STATE_WAIT_LISTREQUEST_SENDDONE;
+            break;
+        case IANA_6TOP_CMD_CLEAR:
+            sixtop_vars.six2six_state = SIX_STATE_WAIT_CLEARREQUEST_SENDDONE;
+            break;
+        }
+    } else {
+        openqueue_freePacketBuffer(pkt);
+    }
+    return outcome;
 }
 
 //======= from upper layer
@@ -876,7 +861,6 @@ port_INLINE void sixtop_sendKA() {
 void timer_sixtop_six2six_timeout_fired(void) {
     // timeout timer fired, reset the state of sixtop to idle
     sixtop_vars.six2six_state = SIX_STATE_IDLE;
-    sixtop_vars.handler = SIX_HANDLER_NONE;
     opentimers_cancel(sixtop_vars.timeoutTimerId);
 }
 
@@ -891,7 +875,6 @@ void sixtop_six2six_sendDone(OpenQueueEntry_t* msg, owerror_t error){
         if(error == E_FAIL) {
             // reset handler and state if the request is failed to send out
             sixtop_vars.six2six_state = SIX_STATE_IDLE;
-            sixtop_vars.handler       = SIX_HANDLER_NONE;
         } else {
             // the packet has been sent out successfully
             switch (sixtop_vars.six2six_state) {
@@ -1220,6 +1203,18 @@ void sixtop_six2six_notifyReceive(
                         break;
                     }
                 }
+                if (
+                    schedule_getOneCellAfterOffset(
+                        metadata,
+                        startingOffset,
+                        &(pkt->l2_nextORpreviousHop),
+                        cellOptions_transformed,
+                        &slotoffset,
+                        &channeloffset) == FALSE
+                ){
+                    returnCode = IANA_6TOP_RC_EOL;
+                }
+                
                 break;
             }
             
@@ -1577,7 +1572,6 @@ void sixtop_six2six_notifyReceive(
             (errorparameter_t)sixtop_vars.six2six_state
         );
         sixtop_vars.six2six_state   = SIX_STATE_IDLE;
-        sixtop_vars.handler         = SIX_HANDLER_NONE;
         opentimers_cancel(sixtop_vars.timeoutTimerId);
     }
 }
@@ -1739,7 +1733,7 @@ bool sixtop_areAvailableCellsToBeRemoved(
    
     i                   = 0;
     numOfavailableCells = 0;
-    available           = FALSE;
+    available           = TRUE;
     
     // translate cellOptions to cell type 
     if (cellOptions == LINKOPTIONS_TX){
@@ -1760,6 +1754,7 @@ bool sixtop_areAvailableCellsToBeRemoved(
     } else {
         do {
             if (cellList[i].isUsed){
+                memset(&info,0,sizeof(slotinfo_element_t));
                 if (type==CELLTYPE_TXRX){
                     schedule_getSlotInfo(cellList[i].slotoffset,&anycastAddr,&info);
                 } else {
@@ -1775,16 +1770,14 @@ bool sixtop_areAvailableCellsToBeRemoved(
             i++;
         }while(i<CELLLIST_MAX_LEN && numOfavailableCells<numOfCells);
       
-        if(numOfavailableCells>0){
+        if(numOfavailableCells==numOfCells && available == TRUE){
             //the rest link will not be scheduled, mark them as off type
             while(i<CELLLIST_MAX_LEN){
                 cellList[i].isUsed = FALSE;
                 i++;
             }
-            // local schedule can statisfy the bandwidth of cell request. 
-            available = TRUE;
         } else {
-            // local schedule can't statisfy the bandwidth of cell request
+            // local schedule can't satisfy the bandwidth of cell request
             available = FALSE;
         }
     }
