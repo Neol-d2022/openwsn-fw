@@ -189,8 +189,7 @@ owerror_t sixtop_request(
     }
    
     if(sixtop_vars.busySending6top >= 2) {
-        sixtop_vars.handler = SIX_HANDLER_NONE;
-        return;
+        return E_FAIL;
     }
     // get a free packet buffer
     pkt = openqueue_getFreePacketBuffer(COMPONENT_SIXTOP_RES);

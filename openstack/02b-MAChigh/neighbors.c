@@ -780,10 +780,6 @@ void  neighbors_removeOld() {
             if((uint16_t)txAck * 2 <= (uint16_t)tx && tx >= 16) {
                 if(schedule_getNumOfSlotsByTypeAndIndex(CELLTYPE_TX, i) > 0) {
                     _6pRequest = 1;
-                    if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-                       // one sixtop transcation is happening, only one instance at one time
-                       continue;
-                    }
                     sixtop_request(
                        IANA_6TOP_CMD_CLEAR,                             // code
                        &(neighbors_vars.neighbors[i].addr_64b),         // neighbor

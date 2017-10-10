@@ -223,10 +223,6 @@ void sf0_bandwidthEstimate_2_task(void){
             // failed to get cell list to add
             return;
         }
-        if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-            // one sixtop transcation is happening, only one instance at one time
-            return;
-        }
         sixtop_request(
             IANA_6TOP_CMD_ADD,                  // code
             &neighbor,                          // neighbor
@@ -245,10 +241,6 @@ void sf0_bandwidthEstimate_2_task(void){
             if (sf0_candidateRemoveCellList(celllist_delete,&neighbor,SF0THRESHOLD)==FALSE){
                 // failed to get cell list to delete
                 return;
-            }
-            if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-               // one sixtop transcation is happening, only one instance at one time
-               return;
             }
             sixtop_request(
                 IANA_6TOP_CMD_DELETE,   // code
@@ -269,10 +261,6 @@ void sf0_bandwidthEstimate_2_task(void){
 
 sf0_bandwidthEstimate_2_task_exit:    
     if(neighbors_getInvalidGenerationNeighbor(&neighbor) == TRUE) {
-        if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-           // one sixtop transcation is happening, only one instance at one time
-           return;
-        }
         sixtop_request(
            IANA_6TOP_CMD_CLEAR,                             // code
            &neighbor,                                       // neighbor
@@ -282,7 +270,6 @@ sf0_bandwidthEstimate_2_task_exit:
            NULL,                                            // celllist to add (not used)
            sf0_getsfid(),                                   // sfid
            0,                                               // list command offset (not used)
-
            0                                                // list command maximum list of cells(not used)
         );
         return;

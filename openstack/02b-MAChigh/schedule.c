@@ -935,11 +935,12 @@ void schedule_indicateTx(asn_t* asnTimestamp, bool succesfullTx) {
 }
 
 void schedule_housekeeping(){
-    uint8_t     i, j;
+    uint8_t     i, j, _6pRequest;
     
     INTERRUPT_DECLARATION();
     DISABLE_INTERRUPTS();
 
+    _6pRequest = 0;
     for(i=0;i<MAXACTIVESLOTS;i++) {
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX || schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
             j = neighbors_addressToIndex(&(schedule_vars.scheduleBuf[i].neighbor));
@@ -950,6 +951,10 @@ void schedule_housekeeping(){
                 DISABLE_INTERRUPTS();
             }
         }
+
+        if(_6pRequest > 0)
+            continue;
+            
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_TX){
             // remove Tx cell if it's scheduled to non-preferred parent
             /*if (icmpv6rpl_getPreferredParentEui64(&neighbor)==TRUE) {
@@ -973,10 +978,6 @@ void schedule_housekeeping(){
                 }
             }*/
             if(schedule_vars.scheduleBuf[i].numTx >= 16 && schedule_vars.scheduleBuf[i].numTxACK == 0) {
-                if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-                   // one sixtop transcation is happening, only one instance at one time
-                   continue;
-                }
                 sixtop_request(
                    IANA_6TOP_CMD_CLEAR,                             // code
                    &(schedule_vars.scheduleBuf[i].neighbor),        // neighbor
@@ -988,15 +989,12 @@ void schedule_housekeeping(){
                    0,                                               // list command offset (not used)
                    0                                                // list command maximum list of cells(not used)
                 );
+                _6pRequest = 1;
                 break;
             }
         }
         if(schedule_vars.scheduleBuf[i].type == CELLTYPE_RX){
             if(ieee154e_asnDiff(&schedule_vars.scheduleBuf[i].lastUsedAsn) >= (16 * SLOTFRAME_LENGTH) && schedule_vars.scheduleBuf[i].numRx == 0) {
-                if (sixtop_setHandler(SIX_HANDLER_SF0)==FALSE){
-                   // one sixtop transcation is happening, only one instance at one time
-                   continue;
-                }
                 sixtop_request(
                    IANA_6TOP_CMD_CLEAR,                             // code
                    &(schedule_vars.scheduleBuf[i].neighbor),        // neighbor
@@ -1008,6 +1006,7 @@ void schedule_housekeeping(){
                    0,                                               // list command offset (not used)
                    0                                                // list command maximum list of cells(not used)
                 );
+                _6pRequest = 1;
                 break;
             }
         }
