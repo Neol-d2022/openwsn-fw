@@ -28,7 +28,7 @@ typedef struct {
    bool                  busySendingRes;            // TRUE when busy sending a response packet
    bool                  waitingRes;
    bool                  askingSelf;
-   bool                  askedNeighbor;
+   bool                  askedServer;
 } ushortid_vars_t;
 
 //=========================== variables =======================================

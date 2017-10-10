@@ -88,15 +88,55 @@ uint8_t neighbors_addressToIndex(open_addr_t* neighbor) {
 
 \returns The index of neighbor whose short id is not known, or MAXNUMNEIGHBORS if all neighbors' id are known / there are no neighbors.
 */
-uint8_t neighbors_nextNull_ushortid(void) {
-    uint8_t i;
+uint8_t neighbors_nextNull_ushortid(bool sendToServer) {
+    uint8_t i, c;
+    c = 0;
+neighbors_nextNull_ushortid_retry:
     for(i=0;i<MAXNUMNEIGHBORS;i+=1) {
         if(neighbors_vars.neighbors[i].used==TRUE) {
-            if(neighbors_shortid_vars.neighborsId[i] == 0)
-              break;
+            if(neighbors_shortid_vars.neighborsId[i] == 0) {
+                c += 1;
+                if(sendToServer)
+                    break;
+                else {
+                    if(neighbors_shortid_vars.failed[i] == 0) {
+                        break;
+                    }
+                }
+            }
         }
     }
+    if(c != 0 && i >= MAXNUMNEIGHBORS) {
+        for(i=0;i<MAXNUMNEIGHBORS;i+=1) {
+            if(neighbors_vars.neighbors[i].used==TRUE) {
+                neighbors_shortid_vars.failed[i] = 0;
+            }
+        }
+        goto neighbors_nextNull_ushortid_retry;
+    }
     return i;
+}
+
+void neighbors_setJustFailed_ushortid(uint8_t index, uint8_t *_c, uint8_t *_n) {
+    uint8_t i, c, n;
+
+    if(index < MAXNUMNEIGHBORS) 
+        neighbors_shortid_vars.failed[index] = 1;
+    
+    c = n = 0;
+    for(i=0;i<MAXNUMNEIGHBORS;i+=1) {
+        if(neighbors_vars.neighbors[i].used==TRUE) {
+            if(neighbors_shortid_vars.neighborsId[i] == 0) {
+                n += 1;
+                if(neighbors_shortid_vars.failed[i] != 0) {
+                    c += 1;
+                }
+            }
+        }
+    }
+
+    if(_c) *_c = c;
+    if(_n) *_n = n;
 }
 
 uint16_t neighbors_get_ushortid(uint8_t neighborIndex) {
@@ -937,6 +977,7 @@ void registerNewNeighbor(open_addr_t* address,
             neighbors_vars.neighbors[i].numTx                  = 0;
             neighbors_vars.neighbors[i].numTxACK               = 0;
             neighbors_shortid_vars.neighborsId[i]              = 0;
+            neighbors_shortid_vars.failed[i]                   = 0;
             neighbor_bw_vars.bw_used[i]                        = 0;
             neighbor_bw_vars.sf_passed[i]                      = 0;
             neighbor_bw_vars.bw_current[i]                     = 0;

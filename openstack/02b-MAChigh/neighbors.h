@@ -55,6 +55,7 @@ typedef struct {
 
 typedef struct {
    uint16_t             neighborsId[MAXNUMNEIGHBORS];
+   uint8_t              failed[MAXNUMNEIGHBORS];
 } neighbors_shortid_vars_t;
 
 typedef struct {
@@ -84,7 +85,8 @@ void          neighbors_init(void);
 dagrank_t     neighbors_getNeighborRank(uint8_t index);
 uint8_t       neighbors_getNumNeighbors(void);
 uint8_t       neighbors_addressToIndex(open_addr_t* neighbor);
-uint8_t       neighbors_nextNull_ushortid(void);
+uint8_t       neighbors_nextNull_ushortid(bool sendToServer);
+void          neighbors_setJustFailed_ushortid(uint8_t index, uint8_t *_c, uint8_t *_n);
 uint16_t      neighbors_get_ushortid(uint8_t neighborIndex);
 uint16_t      neighbors_getLinkMetric(uint8_t index);
 open_addr_t*  neighbors_getKANeighbor(uint16_t kaPeriod);
