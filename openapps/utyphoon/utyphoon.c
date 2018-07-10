@@ -25,6 +25,7 @@ utyphoon_vars_t utyphoon_vars;
 //=========================== public ==========================================
 
 void utyphoon_init() {
+        utyphoon_vars.data_4B = 0;
 	utyphoon_vars.busySendingData      = FALSE;
 	utyphoon_vars.timerId_utyphoon     = opentimers_create();
         if(utyphoon_vars.timerId_utyphoon == TOO_MANY_TIMERS_ERROR)
@@ -48,10 +49,9 @@ void utyphoon_timer_cb(opentimers_id_t id){
    scheduler_push_task(utyphoon_task_cb,TASKPRIO_COAP);
 }
 
-uint32_t get_test_sensor_data(){
-   static uint32_t      data_4B = 0;
-   data_4B++;
-   return data_4B;
+uint32_t get_test_sensor_data(void){
+   (utyphoon_vars.data_4B)++;
+   return utyphoon_vars.data_4B;
 }
 
 void utyphoon_task_cb() {
@@ -78,8 +78,6 @@ void utyphoon_task_cb() {
       return;
    }
    
-   sensorData = get_test_sensor_data();    // If network is busy, data will be discarded.
-   
    if (utyphoon_vars.busySendingData==TRUE) {
       // don't continue if I'm still sending a previous data packet
       return;
@@ -97,6 +95,7 @@ void utyphoon_task_cb() {
       //openqueue_freePacketBuffer(pkt);
       return;
    }
+   sensorData = get_test_sensor_data();
    // take ownership over that packet
    pkt->creator                   = COMPONENT_UTYPHOON;
    pkt->owner                     = COMPONENT_UTYPHOON;
