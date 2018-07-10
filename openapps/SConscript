@@ -27,6 +27,7 @@ if localEnv['board']=='python':
         'uprober',
         'uranker',
         'cjoin',
+        'utyphoon',
     ]
 
 # source files that should be included in the build other than

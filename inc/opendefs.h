@@ -96,6 +96,7 @@ enum {
    WKP_UDP_INJECT                      =   61617,// 0xf0b1
    WKP_UDP_RINGMASTER                  =   15000,
    WKP_UDP_SERIALBRIDGE                =    2001,
+   WKP_UDP_TYPHOON                     =   15001,
    WKP_UDP_HURRICANE                   =   15003,
    WKP_UDP_SHORTID                     =   15004,
    WKP_UDP_ANTILOOP                    =   15005,
@@ -189,6 +190,7 @@ enum {
    COMPONENT_URANKER                   = 0xa4,
    COMPONENT_URANKER_RES               = 0xa5,
    COMPONENT_USHORTID_RES              = 0xa6,
+   COMPONENT_UTYPHOON                  = 0xa7,
 };
 
 /**

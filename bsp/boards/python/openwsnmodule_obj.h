@@ -47,6 +47,7 @@
 #include "uranker_obj.h"
 #include "uinject_obj.h"
 #include "userialbridge_obj.h"
+#include "utyphoon_obj.h"
 
 //=========================== prototypes ======================================
 
@@ -250,6 +251,7 @@ struct OpenMote {
    uecho_vars_t         uecho_vars;
    uinject_vars_t       uinject_vars;
    userialbridge_vars_t userialbridge_vars;
+   utyphoon_vars_t      utyphoon_vars;
 };
 
 #endif
